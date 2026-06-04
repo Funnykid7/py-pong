@@ -294,6 +294,8 @@ class Game:
                 self._score(scorer, ball)
 
     def _score(self, scorer: int, scored_ball: Ball):
+        if self.state != STATE_PLAYING:
+            return
         self._play_sfx("score")
         wall_x = 0.0 if scorer == 2 else float(SCREEN_W)
         color = P2_COLOR if scorer == 2 else P1_COLOR
