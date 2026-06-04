@@ -157,3 +157,49 @@ def test_ball_records_last_touch_player():
     b.pos.y = SCREEN_H / 2
     b.bounce_paddle(p1)
     assert b.last_touch == 1
+
+
+from src.entities import PowerUp, PowerUpType
+from src.constants import POWERUP_SIZE, HUD_HEIGHT
+
+
+def test_powerup_collected_when_ball_overlaps():
+    pu = PowerUp()
+    pu.pos = pygame.Vector2(640, 360)
+    pu.rect.center = (640, 360)
+    b = Ball()
+    b.pos = pygame.Vector2(640, 360)
+    b.rect.center = (640, 360)
+    assert pu.check_collection(b) is True
+    assert pu.collected is True
+
+
+def test_powerup_not_collected_when_ball_far():
+    pu = PowerUp()
+    pu.pos = pygame.Vector2(640, 360)
+    pu.rect.center = (640, 360)
+    b = Ball()
+    b.pos = pygame.Vector2(100, 100)
+    b.rect.center = (100, 100)
+    assert pu.check_collection(b) is False
+    assert pu.collected is False
+
+
+def test_powerup_type_is_valid():
+    for _ in range(20):
+        pu = PowerUp()
+        assert pu.type in PowerUpType.ALL
+
+
+def test_powerup_spawns_in_midfield():
+    for _ in range(20):
+        pu = PowerUp()
+        assert SCREEN_W // 4 <= pu.pos.x <= 3 * SCREEN_W // 4
+        assert pu.pos.y > HUD_HEIGHT
+
+
+def test_powerup_pulse_increases_over_time():
+    pu = PowerUp()
+    t0 = pu.pulse_t
+    pu.update(0.1)
+    assert pu.pulse_t > t0

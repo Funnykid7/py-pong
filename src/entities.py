@@ -113,3 +113,35 @@ class Ball:
     @property
     def current_speed(self) -> float:
         return self.vel.length()
+
+
+class PowerUpType:
+    SPEED_BOOST = "SPEED_BOOST"
+    SLOW_BALL = "SLOW_BALL"
+    BIG_PADDLE = "BIG_PADDLE"
+    SMALL_OPPONENT = "SMALL_OPPONENT"
+    MULTI_BALL = "MULTI_BALL"
+    ALL = ["SPEED_BOOST", "SLOW_BALL", "BIG_PADDLE", "SMALL_OPPONENT", "MULTI_BALL"]
+
+
+class PowerUp:
+    def __init__(self):
+        margin = 100
+        self.pos = pygame.Vector2(
+            random.randint(SCREEN_W // 4, 3 * SCREEN_W // 4),
+            random.randint(HUD_HEIGHT + margin, SCREEN_H - margin),
+        )
+        self.type: str = random.choice(PowerUpType.ALL)
+        self.rect = pygame.Rect(0, 0, POWERUP_SIZE, POWERUP_SIZE)
+        self.rect.center = (int(self.pos.x), int(self.pos.y))
+        self.pulse_t = 0.0
+        self.collected = False
+
+    def update(self, dt: float):
+        self.pulse_t += dt
+
+    def check_collection(self, ball: "Ball") -> bool:
+        if self.rect.colliderect(ball.rect):
+            self.collected = True
+            return True
+        return False
