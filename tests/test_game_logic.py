@@ -101,3 +101,66 @@ def test_score_resets_rally_count():
     ball = g.balls[0]
     g._score(1, ball)
     assert g.rally_count == 0
+
+
+from src.entities import PowerUp, PowerUpType
+
+
+def make_powerup(ptype: str) -> PowerUp:
+    pu = PowerUp()
+    pu.type = ptype
+    return pu
+
+
+def test_speed_boost_increases_ball_speed():
+    g = make_game()
+    ball = g.balls[0]
+    ball.last_touch = 1
+    initial_speed = ball.vel.length()
+    g._activate_powerup(make_powerup(PowerUpType.SPEED_BOOST), ball)
+    assert ball.vel.length() > initial_speed * 1.4
+
+
+def test_slow_ball_decreases_ball_speed():
+    g = make_game()
+    ball = g.balls[0]
+    ball.last_touch = 1
+    initial_speed = ball.vel.length()
+    g._activate_powerup(make_powerup(PowerUpType.SLOW_BALL), ball)
+    assert ball.vel.length() < initial_speed * 0.7
+
+
+def test_big_paddle_increases_beneficiary_height():
+    g = make_game()
+    ball = g.balls[0]
+    ball.last_touch = 1
+    g._activate_powerup(make_powerup(PowerUpType.BIG_PADDLE), ball)
+    assert g.p1.height > PADDLE_H
+    assert g.p1.active_powerup == PowerUpType.BIG_PADDLE
+
+
+def test_small_opponent_shrinks_opponent():
+    g = make_game()
+    ball = g.balls[0]
+    ball.last_touch = 1  # P1 benefits, P2 shrinks
+    g._activate_powerup(make_powerup(PowerUpType.SMALL_OPPONENT), ball)
+    assert g.p2.height < PADDLE_H
+    assert g.p2.active_powerup == PowerUpType.SMALL_OPPONENT
+
+
+def test_multi_ball_adds_second_ball():
+    g = make_game()
+    ball = g.balls[0]
+    ball.last_touch = 2
+    assert len(g.balls) == 1
+    g._activate_powerup(make_powerup(PowerUpType.MULTI_BALL), ball)
+    assert len(g.balls) == 2
+
+
+def test_powerup_beneficiary_is_last_touch_player():
+    g = make_game()
+    ball = g.balls[0]
+    ball.last_touch = 2
+    g._activate_powerup(make_powerup(PowerUpType.BIG_PADDLE), ball)
+    assert g.p2.height > PADDLE_H
+    assert g.p1.height == PADDLE_H
