@@ -48,3 +48,68 @@ class Paddle:
             self.height = PADDLE_H
         self.active_powerup = None
         self.powerup_timer = 0.0
+
+
+class Ball:
+    def __init__(self):
+        self.pos = pygame.Vector2(SCREEN_W / 2, SCREEN_H / 2)
+        self.base_speed = float(BALL_SPEED_INITIAL)
+        angle = random.choice([-30, -15, 0, 15, 30])
+        direction = random.choice([-1, 1])
+        rad = math.radians(angle)
+        self.vel = pygame.Vector2(
+            direction * self.base_speed * math.cos(rad),
+            self.base_speed * math.sin(rad),
+        )
+        self.rally_hits = 0
+        self.spin = 0.0
+        self.trail_positions: list[pygame.Vector2] = []
+        self.rect = pygame.Rect(0, 0, BALL_SIZE, BALL_SIZE)
+        self.rect.center = (int(self.pos.x), int(self.pos.y))
+        self.last_touch: int = 0
+
+    def update(self, dt: float):
+        self.trail_positions.append(pygame.Vector2(self.pos))
+        if len(self.trail_positions) > BALL_TRAIL_LENGTH:
+            self.trail_positions.pop(0)
+        self.vel.y += self.spin * dt
+        self.pos += self.vel * dt
+        self.rect.center = (int(self.pos.x), int(self.pos.y))
+
+    def bounce_wall(self):
+        self.vel.y *= -1
+
+    def bounce_paddle(self, paddle: "Paddle"):
+        relative_y = (self.pos.y - paddle.pos.y) / (paddle.height / 2)
+        relative_y = max(-1.0, min(1.0, relative_y))
+        bounce_angle = relative_y * 75
+        self.rally_hits += 1
+        speed_mult = min(
+            1.0 + self.rally_hits * BALL_SPEED_INCREMENT,
+            BALL_SPEED_MAX_MULTIPLIER,
+        )
+        new_speed = self.base_speed * speed_mult
+        rad = math.radians(bounce_angle)
+        direction = 1 if self.vel.x < 0 else -1
+        self.vel.x = direction * new_speed * math.cos(rad)
+        self.vel.y = new_speed * math.sin(rad)
+        self.spin = relative_y * 50
+        self.last_touch = paddle.player
+
+    def reset(self):
+        self.pos = pygame.Vector2(SCREEN_W / 2, SCREEN_H / 2)
+        self.trail_positions.clear()
+        self.rally_hits = 0
+        self.spin = 0.0
+        angle = random.choice([-30, -15, 0, 15, 30])
+        direction = random.choice([-1, 1])
+        rad = math.radians(angle)
+        self.vel = pygame.Vector2(
+            direction * self.base_speed * math.cos(rad),
+            self.base_speed * math.sin(rad),
+        )
+        self.rect.center = (int(self.pos.x), int(self.pos.y))
+
+    @property
+    def current_speed(self) -> float:
+        return self.vel.length()

@@ -59,3 +59,101 @@ def test_paddle_player_colors():
     from src.constants import P1_COLOR, P2_COLOR
     assert p1.color == P1_COLOR
     assert p2.color == P2_COLOR
+
+
+from src.entities import Ball
+from src.constants import BALL_TRAIL_LENGTH, BALL_SPEED_INITIAL, BALL_SPEED_MAX_MULTIPLIER
+
+
+def test_ball_starts_at_center():
+    b = Ball()
+    assert abs(b.pos.x - SCREEN_W / 2) < 1
+    assert abs(b.pos.y - SCREEN_H / 2) < 1
+
+
+def test_ball_trail_does_not_exceed_max_length():
+    b = Ball()
+    for _ in range(20):
+        b.update(1 / 60)
+    assert len(b.trail_positions) <= BALL_TRAIL_LENGTH
+
+
+def test_ball_bounces_wall():
+    b = Ball()
+    b.vel = pygame.Vector2(400, -400)
+    b.bounce_wall()
+    assert b.vel.y > 0
+
+
+def test_ball_reset_clears_trail_and_returns_to_center():
+    b = Ball()
+    for _ in range(10):
+        b.update(1 / 60)
+    b.reset()
+    assert len(b.trail_positions) == 0
+    assert abs(b.pos.x - SCREEN_W / 2) < 1
+    assert abs(b.pos.y - SCREEN_H / 2) < 1
+    assert b.rally_hits == 0
+
+
+def test_ball_bounce_paddle_upward_on_top_hit():
+    b = Ball()
+    b.pos = pygame.Vector2(200, 200)
+    b.vel = pygame.Vector2(-400, 0)
+    p = Paddle(PADDLE_MARGIN + PADDLE_W // 2, 1)
+    p.pos.y = 300
+    p.rect.centery = 300
+    # Hit near top of paddle — relative_y should be negative
+    b.pos.y = p.pos.y - p.height * 0.4
+    b.bounce_paddle(p)
+    assert b.vel.y < 0  # going upward
+    assert b.vel.x > 0  # reversed direction
+
+
+def test_ball_bounce_paddle_downward_on_bottom_hit():
+    b = Ball()
+    b.vel = pygame.Vector2(-400, 0)
+    p = Paddle(PADDLE_MARGIN + PADDLE_W // 2, 1)
+    p.pos.y = 300
+    p.rect.centery = 300
+    b.pos.y = p.pos.y + p.height * 0.4
+    b.bounce_paddle(p)
+    assert b.vel.y > 0  # going downward
+    assert b.vel.x > 0
+
+
+def test_ball_speed_increases_per_hit():
+    b = Ball()
+    b.vel = pygame.Vector2(-400, 0)
+    initial_speed = b.vel.length()
+    p = Paddle(PADDLE_MARGIN + PADDLE_W // 2, 1)
+    p.pos.y = SCREEN_H / 2
+    p.rect.centery = int(SCREEN_H / 2)
+    b.pos.y = SCREEN_H / 2
+    b.bounce_paddle(p)
+    assert b.vel.length() > initial_speed
+
+
+def test_ball_speed_capped_at_max():
+    b = Ball()
+    p = Paddle(PADDLE_MARGIN + PADDLE_W // 2, 1)
+    p.pos.y = SCREEN_H / 2
+    p.rect.centery = int(SCREEN_H / 2)
+    b.pos.y = SCREEN_H / 2
+    # Simulate many hits
+    for _ in range(100):
+        b.vel.x = -abs(b.vel.x)
+        b.bounce_paddle(p)
+    max_speed = BALL_SPEED_INITIAL * BALL_SPEED_MAX_MULTIPLIER
+    assert b.vel.length() <= max_speed * 1.01  # small float tolerance
+
+
+def test_ball_records_last_touch_player():
+    b = Ball()
+    b.vel = pygame.Vector2(-400, 0)
+    p1 = Paddle(PADDLE_MARGIN + PADDLE_W // 2, 1)
+    p1.pos.y = SCREEN_H / 2
+    p1.rect.centery = int(SCREEN_H / 2)
+    b.pos.y = SCREEN_H / 2
+    b.bounce_paddle(p1)
+    assert b.last_touch == 1
