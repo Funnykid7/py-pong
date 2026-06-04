@@ -81,8 +81,6 @@ class Game:
         except Exception:
             pass
         self.current_music = "normal"
-        if self.music_normal:
-            self.music_channels[0].play(self.music_normal, loops=-1)
 
         self._menu_music_loaded = False
         try:
@@ -93,11 +91,12 @@ class Game:
 
     def _start_menu_music(self):
         if self._menu_music_loaded:
+            pygame.mixer.music.stop()
             pygame.mixer.music.play(-1)
 
     def _stop_menu_music(self):
         if self._menu_music_loaded:
-            pygame.mixer.music.fadeout(500)
+            pygame.mixer.music.fadeout(500)  # async fade; countdown covers the 0.5s overlap
 
     def _play_sfx(self, name: str):
         sfx = self.sfx.get(name)
@@ -201,6 +200,8 @@ class Game:
 
     def _start_match(self):
         self._stop_menu_music()
+        if self.music_normal:
+            self.music_channels[0].play(self.music_normal, loops=-1)
         self.p1.score = 0
         self.p2.score = 0
         self.p1.sets_won = 0
