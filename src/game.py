@@ -57,11 +57,12 @@ class Game:
         self.menu_ball_vel = pygame.Vector2(300, 220)
 
         self._init_audio()
+        self._start_menu_music()
 
     def _init_audio(self):
         self.sfx: dict = {}
         for name, path in [
-            ("hit", "assets/sounds/hit.wav"),
+            ("hit", "assets/sounds/ball hit.mp3"),
             ("score", "assets/sounds/score.wav"),
             ("powerup", "assets/sounds/powerup.wav"),
             ("win", "assets/sounds/win.wav"),
@@ -82,6 +83,21 @@ class Game:
         self.current_music = "normal"
         if self.music_normal:
             self.music_channels[0].play(self.music_normal, loops=-1)
+
+        self._menu_music_loaded = False
+        try:
+            pygame.mixer.music.load("assets/sounds/main theme.mp3")
+            self._menu_music_loaded = True
+        except Exception:
+            pass
+
+    def _start_menu_music(self):
+        if self._menu_music_loaded:
+            pygame.mixer.music.play(-1)
+
+    def _stop_menu_music(self):
+        if self._menu_music_loaded:
+            pygame.mixer.music.fadeout(500)
 
     def _play_sfx(self, name: str):
         sfx = self.sfx.get(name)
@@ -184,6 +200,7 @@ class Game:
                     self._reset_to_menu()
 
     def _start_match(self):
+        self._stop_menu_music()
         self.p1.score = 0
         self.p2.score = 0
         self.p1.sets_won = 0
@@ -209,6 +226,7 @@ class Game:
     def _reset_to_menu(self):
         self.state = STATE_MENU
         self.menu_selected = 0
+        self._start_menu_music()
 
     def _update(self, dt: float):
         if self.state == STATE_MENU:
