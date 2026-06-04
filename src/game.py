@@ -331,8 +331,9 @@ class Game:
                 self.p2.score = 0
                 if paddle.sets_won >= MATCH_WIN_SETS:
                     self._end_match(winner=player)
-                    return
-                self._start_countdown()
+                else:
+                    self._start_countdown()
+                return
 
     def _end_match(self, winner: int | None = None):
         if winner is None:

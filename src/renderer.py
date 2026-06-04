@@ -101,8 +101,6 @@ def draw_paddle(surface: pygame.Surface, paddle):
 
 def draw_ball(surface: pygame.Surface, ball):
     for i, pos in enumerate(ball.trail_positions):
-        if not ball.trail_positions:
-            break
         frac = i / len(ball.trail_positions)
         alpha = int(180 * frac)
         r = max(1, int((BALL_SIZE // 2) * frac))
