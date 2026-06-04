@@ -23,7 +23,7 @@ Two additions to the existing py-pong game:
 | `~/Downloads/ball hit.mp3` | `assets/sounds/ball hit.mp3` | Paddle collision SFX |
 
 ### Behaviour
-- **Main theme:** loaded via `pygame.mixer.music`. Starts playing (`pygame.mixer.music.play(-1)`) when the game enters `STATE_MENU` or `STATE_MODE_SELECT`. Fades out (`pygame.mixer.music.fadeout(500)`) the moment the game transitions to `STATE_PLAYING`. Does not resume mid-game or on game-over.
+- **Main theme:** loaded via `pygame.mixer.music`. Starts playing (`pygame.mixer.music.play(-1)`) when the game enters `STATE_MENU` or `STATE_MODE_SELECT` (including when returning from game over). Fades out (`pygame.mixer.music.fadeout(500)`) the moment the game transitions to `STATE_PLAYING`. Does not play during `STATE_PLAYING`, `STATE_PAUSED`, or `STATE_GAME_OVER`.
 - **Ball hit:** loaded as a `pygame.mixer.Sound` object under key `"hit"` in `self.sfx`. Called via `_play_sfx("hit")` on every paddle collision — replaces the existing silent placeholder.
 - Both files use the existing `try/except` silent-fallback pattern in `_init_audio`. Missing files are skipped without crashing.
 
@@ -46,7 +46,7 @@ rate = BASE_CHARGE_RATE + gap × PER_POINT_CHARGE
 ```python
 SMASH_BASE_CHARGE_RATE  = 0.025   # fills in ~40s when tied
 SMASH_PER_POINT_CHARGE  = 0.020   # +0.02/s per point behind
-SMASH_DURATION          = 7.0     # seconds the effect lasts (reuses POWERUP_DURATION)
+SMASH_DURATION          = 7.0     # seconds the BIG/SMALL effect lasts after activation
 ```
 
 Fill-time reference:
@@ -96,7 +96,7 @@ Drawn inside `draw_hud()` in `src/renderer.py` via a new helper `_draw_smash_met
 | Charging | P1_COLOR / P2_COLOR | `"SMASH"` | Player color |
 | Ready (`meter >= 1.0`) | Pulsing (alpha oscillates via `sin(pulse_t × 6)`) | `"READY! [LSHIFT]"` / `"READY! [RSHIFT]"` | `ACCENT_COLOR` (yellow) |
 
-`pulse_t` is a float on `Game` that increments by `dt` every frame (shared with `gameover_pulse` pattern already in the codebase).
+`self.smash_pulse_t` is a dedicated float on `Game` that increments by `dt` every frame (same pattern as the existing `gameover_pulse`).
 
 ### Active-effect bar
 The existing `_draw_powerup_hud()` helper still renders a countdown bar + label when `BIG_PADDLE` or `SMALL_OPPONENT` is active on a paddle — this is unchanged.
