@@ -434,6 +434,9 @@ class Game:
                 self.game_mode,
                 self.time_left if self.game_mode == MODE_TIMED else None,
                 (self.p1.sets_won, self.p2.sets_won) if self.game_mode == MODE_BEST_OF_3 else None,
+                self.p1_smash_meter, self.p2_smash_meter,
+                self.p1_smash_ready, self.p2_smash_ready,
+                self.smash_pulse_t,
             )
             if self.countdown > 0:
                 renderer.draw_countdown(game_surf, self.countdown, self.font_title)

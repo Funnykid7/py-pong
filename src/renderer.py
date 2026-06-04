@@ -47,7 +47,9 @@ def draw_background(surface: pygame.Surface):
 
 
 def draw_hud(surface, p1, p2, font_large, font_small,
-             game_mode: str, time_left, sets):
+             game_mode: str, time_left, sets,
+             p1_smash: float, p2_smash: float,
+             p1_ready: bool, p2_ready: bool, smash_pulse_t: float):
     pygame.draw.rect(surface, (15, 15, 25), (0, 0, SCREEN_W, HUD_HEIGHT))
     pygame.draw.line(surface, (40, 40, 60), (0, HUD_HEIGHT), (SCREEN_W, HUD_HEIGHT), 1)
 
@@ -66,11 +68,40 @@ def draw_hud(surface, p1, p2, font_large, font_small,
         set_text = font_small.render(f"Sets  {s1} — {s2}", True, (180, 180, 200))
         surface.blit(set_text, (SCREEN_W // 2 - set_text.get_width() // 2, 20))
 
-    _draw_powerup_hud(surface, p1, font_small, SCREEN_W // 4, P1_COLOR)
-    _draw_powerup_hud(surface, p2, font_small, 3 * SCREEN_W // 4, P2_COLOR)
+    if p1.active_powerup:
+        _draw_powerup_hud(surface, p1, font_small, SCREEN_W // 4, P1_COLOR)
+    else:
+        _draw_smash_meter(surface, SCREEN_W // 4, p1_smash, p1_ready, smash_pulse_t,
+                          P1_COLOR, "[LSHIFT]", font_small)
+
+    if p2.active_powerup:
+        _draw_powerup_hud(surface, p2, font_small, 3 * SCREEN_W // 4, P2_COLOR)
+    else:
+        _draw_smash_meter(surface, 3 * SCREEN_W // 4, p2_smash, p2_ready, smash_pulse_t,
+                          P2_COLOR, "[RSHIFT]", font_small)
 
     hint = font_small.render("W/S                    ↑/↓", True, (60, 60, 80))
     surface.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, SCREEN_H - 22))
+
+
+def _draw_smash_meter(surface, cx: int, meter: float, ready: bool, pulse_t: float,
+                      color: tuple, shift_label: str, font_small):
+    bar_w = 100
+    bar_x = cx - bar_w // 2
+    bar_y = HUD_HEIGHT - 14
+    pygame.draw.rect(surface, (40, 40, 50), (bar_x, bar_y, bar_w, 6), border_radius=3)
+    if ready:
+        pulse_alpha = int(180 + 75 * math.sin(pulse_t * 6))
+        pulse_surf = pygame.Surface((bar_w, 6), pygame.SRCALPHA)
+        pygame.draw.rect(pulse_surf, (*ACCENT_COLOR, pulse_alpha), pulse_surf.get_rect(), border_radius=3)
+        surface.blit(pulse_surf, (bar_x, bar_y))
+        label_txt = font_small.render(f"READY! {shift_label}", True, ACCENT_COLOR)
+    else:
+        fill_w = int(bar_w * meter)
+        if fill_w > 0:
+            pygame.draw.rect(surface, color, (bar_x, bar_y, fill_w, 6), border_radius=3)
+        label_txt = font_small.render("SMASH", True, color)
+    surface.blit(label_txt, (cx - label_txt.get_width() // 2, bar_y - 16))
 
 
 def _draw_powerup_hud(surface, paddle, font_small, cx, color):
