@@ -1,0 +1,17 @@
+import pygame
+from src.constants import SCREEN_W, SCREEN_H
+from src.game import Game
+
+
+def main():
+    pygame.init()
+    pygame.mixer.init()
+    screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
+    pygame.display.set_caption("py-pong")
+    game = Game(screen)
+    game.run()
+    pygame.quit()
+
+
+if __name__ == "__main__":
+    main()
