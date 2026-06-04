@@ -43,6 +43,12 @@ class Game:
         self.sudden_death = False
         self.rally_count = 0
 
+        self.p1_smash_meter = 0.0
+        self.p2_smash_meter = 0.0
+        self.p1_smash_ready = False
+        self.p2_smash_ready = False
+        self.smash_pulse_t = 0.0
+
         self.menu_selected = 0
         self.mode_selected = 0
         self.pause_selected = 0
@@ -114,6 +120,34 @@ class Game:
             self.music_channels[0], self.music_channels[1] = self.music_channels[1], self.music_channels[0]
             self.current_music = "normal"
 
+    def _update_smash_meters(self, dt: float):
+        p1_gap = max(0, self.p2.score - self.p1.score)
+        self.p1_smash_meter = min(1.0, self.p1_smash_meter + (SMASH_BASE_CHARGE_RATE + p1_gap * SMASH_PER_POINT_CHARGE) * dt)
+        if self.p1_smash_meter >= 1.0:
+            self.p1_smash_ready = True
+
+        p2_gap = max(0, self.p1.score - self.p2.score)
+        self.p2_smash_meter = min(1.0, self.p2_smash_meter + (SMASH_BASE_CHARGE_RATE + p2_gap * SMASH_PER_POINT_CHARGE) * dt)
+        if self.p2_smash_meter >= 1.0:
+            self.p2_smash_ready = True
+
+    def _activate_smash(self, player: int):
+        if player == 1 and not self.p1_smash_ready:
+            return
+        if player == 2 and not self.p2_smash_ready:
+            return
+        activator = self.p1 if player == 1 else self.p2
+        opponent = self.p2 if player == 1 else self.p1
+        activator.activate_powerup("BIG_PADDLE")
+        opponent.activate_powerup("SMALL_OPPONENT")
+        self._play_sfx("powerup")
+        if player == 1:
+            self.p1_smash_meter = 0.0
+            self.p1_smash_ready = False
+        else:
+            self.p2_smash_meter = 0.0
+            self.p2_smash_ready = False
+
     def run(self):
         running = True
         while running:
@@ -165,9 +199,14 @@ class Game:
                 self._start_match()
 
     def _handle_playing_event(self, event):
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            self.state = STATE_PAUSED
-            self.pause_selected = 0
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self.state = STATE_PAUSED
+                self.pause_selected = 0
+            elif event.key == pygame.K_LSHIFT and self.countdown == 0:
+                self._activate_smash(1)
+            elif event.key == pygame.K_RSHIFT and self.countdown == 0:
+                self._activate_smash(2)
 
     def _handle_paused_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -212,6 +251,10 @@ class Game:
         self.balls = [Ball()]
         self.particles.clear()
         self.rally_count = 0
+        self.p1_smash_meter = 0.0
+        self.p2_smash_meter = 0.0
+        self.p1_smash_ready = False
+        self.p2_smash_ready = False
         self.state = STATE_PLAYING
         self._start_countdown()
 
@@ -258,6 +301,8 @@ class Game:
             ball.update(dt)
 
         self._handle_collisions()
+        self._update_smash_meters(dt)
+        self.smash_pulse_t += dt
         self.shake.update(dt)
         self.particles.update(dt)
 
@@ -342,6 +387,10 @@ class Game:
                 paddle.sets_won += 1
                 self.p1.score = 0
                 self.p2.score = 0
+                self.p1_smash_meter = 0.0
+                self.p2_smash_meter = 0.0
+                self.p1_smash_ready = False
+                self.p2_smash_ready = False
                 if paddle.sets_won >= MATCH_WIN_SETS:
                     self._end_match(winner=player)
                 else:

@@ -103,3 +103,114 @@ def test_score_resets_rally_count():
     assert g.rally_count == 0
 
 
+from src.constants import SMASH_BASE_CHARGE_RATE, SMASH_PER_POINT_CHARGE
+from src.constants import PADDLE_H
+
+
+def test_smash_meter_charges_at_base_rate_when_tied():
+    g = make_game()
+    g.p1.score = 3
+    g.p2.score = 3
+    g._update_smash_meters(1.0)
+    assert abs(g.p1_smash_meter - SMASH_BASE_CHARGE_RATE) < 0.001
+
+
+def test_smash_meter_charges_faster_when_behind():
+    g = make_game()
+    g.p1.score = 2
+    g.p2.score = 5  # p1 is 3 points behind
+    g._update_smash_meters(1.0)
+    expected = SMASH_BASE_CHARGE_RATE + 3 * SMASH_PER_POINT_CHARGE
+    assert abs(g.p1_smash_meter - expected) < 0.001
+
+
+def test_smash_meter_charges_at_base_when_ahead():
+    g = make_game()
+    g.p1.score = 5
+    g.p2.score = 2  # p1 is ahead — gap = 0
+    g._update_smash_meters(1.0)
+    assert abs(g.p1_smash_meter - SMASH_BASE_CHARGE_RATE) < 0.001
+
+
+def test_smash_meter_caps_at_one():
+    g = make_game()
+    g.p1_smash_meter = 0.95
+    g.p1.score = 0
+    g.p2.score = 10
+    g._update_smash_meters(5.0)
+    assert g.p1_smash_meter <= 1.0
+
+
+def test_smash_ready_flag_set_when_meter_reaches_one():
+    g = make_game()
+    g.p1_smash_meter = 0.99
+    g.p1.score = 0
+    g.p2.score = 5
+    g._update_smash_meters(1.0)
+    assert g.p1_smash_ready is True
+
+
+def test_activate_smash_p1_big_paddle_p2_shrinks():
+    g = make_game()
+    g.p1_smash_ready = True
+    g.p1_smash_meter = 1.0
+    g._activate_smash(1)
+    assert g.p1.height > PADDLE_H
+    assert g.p1.active_powerup == "BIG_PADDLE"
+    assert g.p2.height < PADDLE_H
+    assert g.p2.active_powerup == "SMALL_OPPONENT"
+
+
+def test_activate_smash_p2_big_paddle_p1_shrinks():
+    g = make_game()
+    g.p2_smash_ready = True
+    g.p2_smash_meter = 1.0
+    g._activate_smash(2)
+    assert g.p2.height > PADDLE_H
+    assert g.p2.active_powerup == "BIG_PADDLE"
+    assert g.p1.height < PADDLE_H
+    assert g.p1.active_powerup == "SMALL_OPPONENT"
+
+
+def test_activate_smash_resets_meter_and_flag():
+    g = make_game()
+    g.p1_smash_ready = True
+    g.p1_smash_meter = 1.0
+    g._activate_smash(1)
+    assert g.p1_smash_meter == 0.0
+    assert g.p1_smash_ready is False
+
+
+def test_activate_smash_does_nothing_when_not_ready():
+    g = make_game()
+    g.p1_smash_ready = False
+    g.p1_smash_meter = 0.5
+    g._activate_smash(1)
+    assert g.p1.height == PADDLE_H
+    assert g.p1.active_powerup is None
+
+
+def test_smash_meters_reset_on_new_match():
+    g = make_game()
+    g.p1_smash_meter = 0.8
+    g.p2_smash_meter = 0.6
+    g.p1_smash_ready = True
+    g._start_match()
+    assert g.p1_smash_meter == 0.0
+    assert g.p2_smash_meter == 0.0
+    assert g.p1_smash_ready is False
+
+
+def test_smash_meters_reset_on_set_win():
+    g = make_game(MODE_BEST_OF_3)
+    g.p1_smash_meter = 0.9
+    g.p2_smash_meter = 0.7
+    g.p1.score = SET_WIN_SCORE - 1
+    ball = g.balls[0]
+    g._score(1, ball)  # triggers _check_set_win
+    assert g.p1_smash_meter == 0.0
+    assert g.p2_smash_meter == 0.0
+    assert g.p1_smash_ready is False
+    assert g.p2_smash_ready is False
+
+
