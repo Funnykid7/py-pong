@@ -56,3 +56,7 @@ SHAKE_DECAY = 0.85
 PARTICLE_COUNT_SCORE = 50
 PARTICLE_LIFETIME_MIN = 0.4
 PARTICLE_LIFETIME_MAX = 0.8
+
+# Final Smash meter
+SMASH_BASE_CHARGE_RATE = 0.025   # fills in ~40s at zero gap
+SMASH_PER_POINT_CHARGE = 0.020   # additional rate per point behind

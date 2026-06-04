@@ -4,18 +4,10 @@ from src.constants import (
     SCREEN_W, SCREEN_H, HUD_HEIGHT, BG_COLOR,
     P1_COLOR, P2_COLOR, ACCENT_COLOR, WHITE,
     BALL_SIZE, BALL_SPEED_INITIAL, BALL_SPEED_MAX_MULTIPLIER,
-    PADDLE_H, POWERUP_SIZE, POWERUP_DURATION,
+    PADDLE_H, POWERUP_DURATION,
     MODE_TIMED, MODE_BEST_OF_3,
 )
 
-
-POWERUP_COLORS = {
-    "SPEED_BOOST": (255, 230, 0),
-    "SLOW_BALL": (100, 200, 255),
-    "BIG_PADDLE": (0, 255, 100),
-    "SMALL_OPPONENT": (255, 80, 80),
-    "MULTI_BALL": (200, 100, 255),
-}
 
 POWERUP_LABELS = {
     "SPEED_BOOST": "FAST",
@@ -114,13 +106,6 @@ def draw_ball(surface: pygame.Surface, ball):
         pygame.draw.circle(trail_surf, (*color, alpha), (r, r), r)
         surface.blit(trail_surf, (int(pos.x) - r, int(pos.y) - r))
     draw_glow(surface, ACCENT_COLOR, (int(ball.pos.x), int(ball.pos.y)), BALL_SIZE // 2)
-
-
-def draw_powerup(surface: pygame.Surface, powerup):
-    color = POWERUP_COLORS.get(powerup.type, WHITE)
-    scale = 1.0 + 0.15 * math.sin(powerup.pulse_t * 4)
-    r = max(1, int(POWERUP_SIZE // 2 * scale))
-    draw_glow(surface, color, (int(powerup.pos.x), int(powerup.pos.y)), r)
 
 
 def draw_particles(surface: pygame.Surface, particles: list):

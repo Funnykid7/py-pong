@@ -1,10 +1,8 @@
-import random
 import pygame
 from src.constants import (
     SCREEN_W, SCREEN_H, FPS, HUD_HEIGHT, BG_COLOR,
     PADDLE_W, PADDLE_H, PADDLE_MARGIN, PADDLE_SPEED,
     BALL_SIZE, BALL_SPEED_INITIAL,
-    POWERUP_SPAWN_MIN, POWERUP_SPAWN_MAX, POWERUP_DURATION,
     MODE_FIRST_TO_11, MODE_BEST_OF_3, MODE_TIMED,
     TIMED_DURATION, SUDDEN_DEATH_DURATION, SET_WIN_SCORE,
     MATCH_WIN_SETS, CLASSIC_WIN_SCORE,
@@ -12,8 +10,9 @@ from src.constants import (
     STATE_PAUSED, STATE_GAME_OVER,
     SHAKE_HIT_TRAUMA, SHAKE_SCORE_TRAUMA,
     P1_COLOR, P2_COLOR,
+    SMASH_BASE_CHARGE_RATE, SMASH_PER_POINT_CHARGE,
 )
-from src.entities import Paddle, Ball, PowerUp, PowerUpType
+from src.entities import Paddle, Ball
 from src.effects import ScreenShake, ParticleSystem
 import src.renderer as renderer
 
@@ -34,14 +33,12 @@ class Game:
         self.p1 = Paddle(PADDLE_MARGIN + PADDLE_W // 2, 1)
         self.p2 = Paddle(SCREEN_W - PADDLE_MARGIN - PADDLE_W // 2, 2)
         self.balls: list[Ball] = [Ball()]
-        self.powerup: PowerUp | None = None
 
         self.shake = ScreenShake()
         self.particles = ParticleSystem()
 
         self.countdown = 0
         self.countdown_timer = 0.0
-        self.powerup_spawn_timer = random.uniform(POWERUP_SPAWN_MIN, POWERUP_SPAWN_MAX)
         self.time_left = float(TIMED_DURATION)
         self.sudden_death = False
         self.rally_count = 0
@@ -213,8 +210,6 @@ class Game:
         self.time_left = float(TIMED_DURATION)
         self.sudden_death = False
         self.balls = [Ball()]
-        self.powerup = None
-        self.powerup_spawn_timer = random.uniform(POWERUP_SPAWN_MIN, POWERUP_SPAWN_MAX)
         self.particles.clear()
         self.rally_count = 0
         self.state = STATE_PLAYING
@@ -263,7 +258,6 @@ class Game:
             ball.update(dt)
 
         self._handle_collisions()
-        self._update_powerup(dt)
         self.shake.update(dt)
         self.particles.update(dt)
 
@@ -370,45 +364,6 @@ class Game:
         self.gameover_selected = 0
         self.state = STATE_GAME_OVER
 
-    def _update_powerup(self, dt: float):
-        if self.powerup is None:
-            self.powerup_spawn_timer -= dt
-            if self.powerup_spawn_timer <= 0:
-                self.powerup = PowerUp()
-                self.powerup_spawn_timer = random.uniform(POWERUP_SPAWN_MIN, POWERUP_SPAWN_MAX)
-
-        if self.powerup:
-            self.powerup.update(dt)
-            for ball in self.balls:
-                if self.powerup.check_collection(ball):
-                    self._activate_powerup(self.powerup, ball)
-                    self.powerup = None
-                    break
-
-    def _activate_powerup(self, powerup: PowerUp, ball: Ball):
-        self._play_sfx("powerup")
-        beneficiary = self.p1 if ball.last_touch == 1 else self.p2
-        opponent = self.p2 if ball.last_touch == 1 else self.p1
-
-        ptype = powerup.type
-        if ptype == PowerUpType.SPEED_BOOST:
-            for b in self.balls:
-                b.vel *= 1.5
-            beneficiary.activate_powerup(ptype)
-        elif ptype == PowerUpType.SLOW_BALL:
-            for b in self.balls:
-                b.vel *= 0.6
-            beneficiary.activate_powerup(ptype)
-        elif ptype == PowerUpType.BIG_PADDLE:
-            beneficiary.activate_powerup(ptype)
-        elif ptype == PowerUpType.SMALL_OPPONENT:
-            opponent.activate_powerup(ptype)
-        elif ptype == PowerUpType.MULTI_BALL:
-            new_ball = Ball()
-            new_ball.last_touch = ball.last_touch
-            self.balls.append(new_ball)
-            beneficiary.activate_powerup(ptype)
-
     def _draw(self):
         offset = self.shake.get_offset()
         game_surf = pygame.Surface((SCREEN_W, SCREEN_H))
@@ -424,8 +379,6 @@ class Game:
                 renderer.draw_ball(game_surf, ball)
             renderer.draw_paddle(game_surf, self.p1)
             renderer.draw_paddle(game_surf, self.p2)
-            if self.powerup:
-                renderer.draw_powerup(game_surf, self.powerup)
             renderer.draw_particles(game_surf, self.particles.particles)
             renderer.draw_hud(
                 game_surf, self.p1, self.p2, self.font_large, self.font_small,
