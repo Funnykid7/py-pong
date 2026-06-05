@@ -7,13 +7,15 @@ from src.constants import (
     TIMED_DURATION, SUDDEN_DEATH_DURATION, SET_WIN_SCORE,
     MATCH_WIN_SETS, CLASSIC_WIN_SCORE,
     STATE_MENU, STATE_MODE_SELECT, STATE_PLAYING,
-    STATE_PAUSED, STATE_GAME_OVER,
+    STATE_PAUSED, STATE_GAME_OVER, STATE_DIFFICULTY,
+    OPPONENT_HUMAN, OPPONENT_CPU, DIFFICULTY_OPTIONS,
     SHAKE_HIT_TRAUMA, SHAKE_SCORE_TRAUMA,
     P1_COLOR, P2_COLOR,
     SMASH_BASE_CHARGE_RATE, SMASH_PER_POINT_CHARGE,
 )
 from src.entities import Paddle, Ball
 from src.effects import ScreenShake, ParticleSystem
+from src.cpu import CPUController
 import src.renderer as renderer
 
 
@@ -24,9 +26,9 @@ class Game:
         self.state = STATE_MENU
 
         pygame.font.init()
-        self.font_title = pygame.font.SysFont(None, 100)
-        self.font_large = pygame.font.SysFont(None, 60)
-        self.font_small = pygame.font.SysFont(None, 28)
+        self.font_title = pygame.font.Font(None, 100)
+        self.font_large = pygame.font.Font(None, 60)
+        self.font_small = pygame.font.Font(None, 28)
 
         self.game_mode = MODE_FIRST_TO_11
 
@@ -58,6 +60,11 @@ class Game:
 
         self.menu_ball_pos = pygame.Vector2(SCREEN_W // 2, SCREEN_H // 2)
         self.menu_ball_vel = pygame.Vector2(300, 220)
+
+        self.opponent_type: str = OPPONENT_HUMAN
+        self.cpu_difficulty: str = "MEDIUM"
+        self.difficulty_selected: int = 1  # default highlight on MEDIUM
+        self.cpu: CPUController | None = None
 
         self._init_audio()
         self._start_menu_music()
@@ -166,6 +173,8 @@ class Game:
     def _handle_event(self, event):
         if self.state == STATE_MENU:
             return self._handle_menu_event(event)
+        elif self.state == STATE_DIFFICULTY:
+            return self._handle_difficulty_event(event)
         elif self.state == STATE_MODE_SELECT:
             return self._handle_mode_select_event(event)
         elif self.state == STATE_PLAYING:
@@ -178,14 +187,30 @@ class Game:
     def _handle_menu_event(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_UP, pygame.K_w):
-                self.menu_selected = (self.menu_selected - 1) % 2
+                self.menu_selected = (self.menu_selected - 1) % 3
             elif event.key in (pygame.K_DOWN, pygame.K_s):
-                self.menu_selected = (self.menu_selected + 1) % 2
+                self.menu_selected = (self.menu_selected + 1) % 3
             elif event.key == pygame.K_RETURN:
                 if self.menu_selected == 0:
+                    self.opponent_type = OPPONENT_HUMAN
                     self.state = STATE_MODE_SELECT
+                elif self.menu_selected == 1:
+                    self.opponent_type = OPPONENT_CPU
+                    self.state = STATE_DIFFICULTY
                 else:
                     return "quit"
+
+    def _handle_difficulty_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key in (pygame.K_UP, pygame.K_w):
+                self.difficulty_selected = (self.difficulty_selected - 1) % 4
+            elif event.key in (pygame.K_DOWN, pygame.K_s):
+                self.difficulty_selected = (self.difficulty_selected + 1) % 4
+            elif event.key == pygame.K_RETURN:
+                self.cpu_difficulty = DIFFICULTY_OPTIONS[self.difficulty_selected]
+                self.state = STATE_MODE_SELECT
+            elif event.key == pygame.K_ESCAPE:
+                self.state = STATE_MENU
 
     def _handle_mode_select_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -197,6 +222,11 @@ class Game:
                 modes = [MODE_FIRST_TO_11, MODE_BEST_OF_3, MODE_TIMED]
                 self.game_mode = modes[self.mode_selected]
                 self._start_match()
+            elif event.key == pygame.K_ESCAPE:
+                if self.opponent_type == OPPONENT_CPU:
+                    self.state = STATE_DIFFICULTY
+                else:
+                    self.state = STATE_MENU
 
     def _handle_playing_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -205,7 +235,7 @@ class Game:
                 self.pause_selected = 0
             elif event.key == pygame.K_LSHIFT and self.countdown == 0:
                 self._activate_smash(1)
-            elif event.key == pygame.K_RSHIFT and self.countdown == 0:
+            elif event.key == pygame.K_RSHIFT and self.countdown == 0 and self.opponent_type == OPPONENT_HUMAN:
                 self._activate_smash(2)
 
     def _handle_paused_event(self, event):
@@ -255,6 +285,10 @@ class Game:
         self.p2_smash_meter = 0.0
         self.p1_smash_ready = False
         self.p2_smash_ready = False
+        if self.opponent_type == OPPONENT_CPU:
+            self.cpu = CPUController(self.cpu_difficulty)
+        else:
+            self.cpu = None
         self.state = STATE_PLAYING
         self._start_countdown()
 
@@ -265,11 +299,14 @@ class Game:
     def _reset_to_menu(self):
         self.state = STATE_MENU
         self.menu_selected = 0
+        self.shake.trauma = 0.0
         self._start_menu_music()
 
     def _update(self, dt: float):
         if self.state == STATE_MENU:
             self._update_menu(dt)
+        elif self.state == STATE_DIFFICULTY:
+            pass
         elif self.state == STATE_PLAYING:
             self._update_playing(dt)
         elif self.state == STATE_GAME_OVER:
@@ -293,7 +330,10 @@ class Game:
 
         keys = pygame.key.get_pressed()
         self.p1.vel.y = -PADDLE_SPEED if keys[pygame.K_w] else (PADDLE_SPEED if keys[pygame.K_s] else 0)
-        self.p2.vel.y = -PADDLE_SPEED if keys[pygame.K_UP] else (PADDLE_SPEED if keys[pygame.K_DOWN] else 0)
+        if self.cpu is not None:
+            self.cpu.update(dt, self.balls[0], self.p2)
+        else:
+            self.p2.vel.y = -PADDLE_SPEED if keys[pygame.K_UP] else (PADDLE_SPEED if keys[pygame.K_DOWN] else 0)
 
         self.p1.update(dt)
         self.p2.update(dt)
@@ -414,14 +454,22 @@ class Game:
         self.state = STATE_GAME_OVER
 
     def _draw(self):
-        offset = self.shake.get_offset()
+        if self.state == STATE_PLAYING:
+            offset = self.shake.get_offset()
+        else:
+            offset = pygame.Vector2(0, 0)
         game_surf = pygame.Surface((SCREEN_W, SCREEN_H))
 
         if self.state == STATE_MENU:
             renderer.draw_menu(game_surf, self.font_title, self.font_large, self.font_small,
                                self.menu_selected, (self.menu_ball_pos.x, self.menu_ball_pos.y))
+        elif self.state == STATE_DIFFICULTY:
+            renderer.draw_difficulty_select(game_surf, self.font_large, self.font_small,
+                                            self.difficulty_selected)
         elif self.state == STATE_MODE_SELECT:
-            renderer.draw_mode_select(game_surf, self.font_large, self.font_small, self.mode_selected)
+            context = f"1vCPU · {self.cpu_difficulty}" if self.opponent_type == OPPONENT_CPU else None
+            renderer.draw_mode_select(game_surf, self.font_large, self.font_small,
+                                      self.mode_selected, context)
         elif self.state in (STATE_PLAYING, STATE_PAUSED):
             renderer.draw_background(game_surf)
             for ball in self.balls:
@@ -445,7 +493,8 @@ class Game:
         elif self.state == STATE_GAME_OVER:
             renderer.draw_game_over(game_surf, self.winner, self.p1, self.p2,
                                     self.font_title, self.font_large,
-                                    self.gameover_selected, self.gameover_pulse)
+                                    self.gameover_selected, self.gameover_pulse,
+                                    cpu_mode=(self.opponent_type == OPPONENT_CPU))
             renderer.draw_particles(game_surf, self.particles.particles)
 
         self.screen.fill(BG_COLOR)
