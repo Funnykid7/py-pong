@@ -6,6 +6,7 @@ from src.constants import (
     BALL_SIZE, BALL_SPEED_INITIAL, BALL_SPEED_MAX_MULTIPLIER,
     PADDLE_H, POWERUP_DURATION,
     MODE_TIMED, MODE_BEST_OF_3,
+    DIFFICULTY_OPTIONS, DIFFICULTY_COLORS,
 )
 
 
@@ -69,15 +70,15 @@ def draw_hud(surface, p1, p2, font_large, font_small,
         surface.blit(set_text, (SCREEN_W // 2 - set_text.get_width() // 2, 20))
 
     if p1.active_powerup:
-        _draw_powerup_hud(surface, p1, font_small, SCREEN_W // 4, P1_COLOR)
+        _draw_powerup_hud(surface, p1, font_small, SCREEN_W // 8, P1_COLOR)
     else:
-        _draw_smash_meter(surface, SCREEN_W // 4, p1_smash, p1_ready, smash_pulse_t,
+        _draw_smash_meter(surface, SCREEN_W // 8, p1_smash, p1_ready, smash_pulse_t,
                           P1_COLOR, "[LSHIFT]", font_small)
 
     if p2.active_powerup:
-        _draw_powerup_hud(surface, p2, font_small, 3 * SCREEN_W // 4, P2_COLOR)
+        _draw_powerup_hud(surface, p2, font_small, 7 * SCREEN_W // 8, P2_COLOR)
     else:
-        _draw_smash_meter(surface, 3 * SCREEN_W // 4, p2_smash, p2_ready, smash_pulse_t,
+        _draw_smash_meter(surface, 7 * SCREEN_W // 8, p2_smash, p2_ready, smash_pulse_t,
                           P2_COLOR, "[RSHIFT]", font_small)
 
     hint = font_small.render("W/S                    ↑/↓", True, (60, 60, 80))
@@ -101,7 +102,7 @@ def _draw_smash_meter(surface, cx: int, meter: float, ready: bool, pulse_t: floa
         if fill_w > 0:
             pygame.draw.rect(surface, color, (bar_x, bar_y, fill_w, 6), border_radius=3)
         label_txt = font_small.render("SMASH", True, color)
-    surface.blit(label_txt, (cx - label_txt.get_width() // 2, bar_y - 16))
+    surface.blit(label_txt, (cx - label_txt.get_width() // 2, bar_y - label_txt.get_height() - 3))
 
 
 def _draw_powerup_hud(surface, paddle, font_small, cx, color):
@@ -158,13 +159,13 @@ def draw_menu(surface, font_title, font_large, font_small, selected: int, anim_b
     draw_glow(surface, ACCENT_COLOR, (int(anim_ball_pos[0]), int(anim_ball_pos[1])), BALL_SIZE // 2)
     title = font_title.render("PY-PONG", True, P1_COLOR)
     surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 180))
-    for i, opt in enumerate(["PLAY", "QUIT"]):
+    for i, opt in enumerate(["1 v 1", "1 v CPU", "QUIT"]):
         color = ACCENT_COLOR if i == selected else WHITE
         text = font_large.render(opt, True, color)
-        surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, 370 + i * 70))
+        surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, 320 + i * 70))
 
 
-def draw_mode_select(surface, font_large, font_small, selected: int):
+def draw_mode_select(surface, font_large, font_small, selected: int, context_label: str | None = None):
     draw_background(surface)
     title = font_large.render("SELECT MODE", True, WHITE)
     surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 160))
@@ -180,6 +181,20 @@ def draw_mode_select(surface, font_large, font_small, selected: int):
         surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, y))
         desc_text = font_small.render(desc, True, (120, 120, 140))
         surface.blit(desc_text, (SCREEN_W // 2 - desc_text.get_width() // 2, y + 44))
+    if context_label:
+        ctx = font_small.render(context_label, True, (80, 80, 100))
+        surface.blit(ctx, (SCREEN_W // 2 - ctx.get_width() // 2, SCREEN_H - 50))
+
+
+def draw_difficulty_select(surface, font_large, font_small, selected: int):
+    draw_background(surface)
+    title = font_large.render("SELECT DIFFICULTY", True, WHITE)
+    surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 160))
+    for i, name in enumerate(DIFFICULTY_OPTIONS):
+        y = 290 + i * 90
+        color = DIFFICULTY_COLORS[name] if i == selected else (100, 100, 120)
+        text = font_large.render(name, True, color)
+        surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, y))
 
 
 def draw_pause(surface, font_large, selected: int):
@@ -194,10 +209,14 @@ def draw_pause(surface, font_large, selected: int):
         surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, 360 + i * 70))
 
 
-def draw_game_over(surface, winner: int, p1, p2, font_title, font_large, selected: int, pulse_t: float):
+def draw_game_over(surface, winner: int, p1, p2, font_title, font_large, selected: int, pulse_t: float, cpu_mode: bool = False):
     draw_background(surface)
     color = P1_COLOR if winner == 1 else P2_COLOR
-    winner_surf = font_title.render(f"PLAYER {winner} WINS!", True, color)
+    if cpu_mode and winner == 2:
+        winner_label = "CPU WINS!"
+    else:
+        winner_label = f"PLAYER {winner} WINS!"
+    winner_surf = font_title.render(winner_label, True, color)
     surface.blit(winner_surf, (SCREEN_W // 2 - winner_surf.get_width() // 2, 200))
     score_text = font_large.render(f"{p1.score}  —  {p2.score}", True, WHITE)
     surface.blit(score_text, (SCREEN_W // 2 - score_text.get_width() // 2, 310))
