@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>py-pong — Neon Pong, Reborn</title>
+  <meta name="description" content="A full-featured Pong game with 3 game modes, AI opponent, smash mechanic, and neon particle effects. Built with Python and pygame-ce.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">PY-PONG</a>
+    <div class="nav-links" id="nav-links">
+      <a href="#features" class="nav-link" data-section="features">Features</a>
+      <a href="#upcoming" class="nav-link" data-section="upcoming">Upcoming</a>
+      <a href="#modes" class="nav-link" data-section="modes">Modes</a>
+      <a href="#cpu" class="nav-link" data-section="cpu">CPU</a>
+      <a href="#controls" class="nav-link" data-section="controls">Controls</a>
+      <a href="#install" class="nav-link" data-section="install">Install</a>
+    </div>
+    <a href="https://github.com/Funnykid7/py-pong/archive/refs/heads/main.zip" class="btn-primary nav-cta">Download ZIP</a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- MOBILE OVERLAY -->
+<div class="nav-overlay" id="nav-overlay">
+  <button class="nav-overlay-close" id="nav-overlay-close" aria-label="Close menu">&#x2715;</button>
+  <a href="#features" class="nav-overlay-link">Features</a>
+  <a href="#upcoming" class="nav-overlay-link">Upcoming</a>
+  <a href="#modes" class="nav-overlay-link">Modes</a>
+  <a href="#cpu" class="nav-overlay-link">CPU</a>
+  <a href="#controls" class="nav-overlay-link">Controls</a>
+  <a href="#install" class="nav-overlay-link">Install</a>
+  <a href="https://github.com/Funnykid7/py-pong/archive/refs/heads/main.zip" class="btn-primary nav-overlay-cta">Download ZIP</a>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-left">
+    <p class="hero-eyebrow">Open Source &nbsp;-&nbsp; Python &nbsp;-&nbsp; pygame-ce</p>
+    <h1 class="hero-h1">Classic Pong.<br><span>Neon reborn.</span></h1>
+    <p class="hero-sub">Full-featured Pong with 3 game modes, AI opponent, smash mechanic, and neon particle effects.</p>
+    <div class="hero-actions">
+      <a href="https://github.com/Funnykid7/py-pong/archive/refs/heads/main.zip" class="btn-primary">Download ZIP</a>
+      <a href="https://github.com/Funnykid7/py-pong" class="btn-secondary" target="_blank" rel="noopener">View on GitHub</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-num" style="color:var(--cyan)">3</span>
+        <span class="hero-stat-label">Game Modes</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-num" style="color:var(--magenta)">4</span>
+        <span class="hero-stat-label">CPU Difficulties</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-num" style="color:var(--yellow)">60</span>
+        <span class="hero-stat-label">FPS Physics</span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="game-preview">
+      <div class="g-hud">
+        <span class="g-score g-cyan">7</span>
+        <span class="g-sep">:</span>
+        <span class="g-score g-mag">5</span>
+      </div>
+      <div class="g-center-line"></div>
+      <div class="g-paddle-l"></div>
+      <div class="g-paddle-r"></div>
+      <div class="g-trail t1"></div>
+      <div class="g-trail t2"></div>
+      <div class="g-trail t3"></div>
+      <div class="g-trail t4"></div>
+      <div class="g-particle p1"></div>
+      <div class="g-particle p2"></div>
+      <div class="g-particle p3"></div>
+      <div class="g-smash g-smash-l"><div class="g-smash-fill sf-cyan"></div></div>
+      <div class="g-smash g-smash-r"><div class="g-smash-fill sf-mag"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CURRENT FEATURES -->
+<section class="section section-alt" id="features">
+  <div class="container">
+    <p class="section-label">What's in the game</p>
+    <h2 class="section-h2">Built to feel alive</h2>
+    <p class="section-sub">Every element of classic Pong redesigned with neon physics, screen shake, and a smash mechanic that changes momentum.</p>
+    <div class="features-bento reveal-parent">
+      <div class="f-card f-wide reveal-child" style="--i:0">
+        <span class="tag tag-cyan">Signature Feature</span>
+        <h3 class="f-name">Smash Meter</h3>
+        <p class="f-desc">Builds during play - faster when you're losing. When charged, press LSHIFT or RSHIFT to activate: your paddle grows, your opponent shrinks. One charged strike per match cycle.</p>
+      </div>
+      <div class="f-card reveal-child" style="--i:1">
+        <div class="f-icon f-icon-cyan">FX</div>
+        <h3 class="f-name">Neon Effects</h3>
+        <p class="f-desc">Ball trails, particle bursts on score, screen shake on impact - rendered with BLEND_ADD glow.</p>
+      </div>
+      <div class="f-card f-card-mag reveal-child" style="--i:2">
+        <div class="f-icon f-icon-mag">AI</div>
+        <h3 class="f-name">CPU Opponent</h3>
+        <p class="f-desc">Reaction-delay based AI from Easy to Insane. Single-player mode against a brain that reads the ball.</p>
+      </div>
+      <div class="f-card f-card-yel reveal-child" style="--i:3">
+        <div class="f-icon f-icon-yel">3x</div>
+        <h3 class="f-name">Game Modes</h3>
+        <p class="f-desc">First to 11, Best of 3 Sets, or Timed 3-minute match with sudden death overtime.</p>
+      </div>
+      <div class="f-card reveal-child" style="--i:4">
+        <div class="f-icon f-icon-cyan">dt</div>
+        <h3 class="f-name">Delta-Time Physics</h3>
+        <p class="f-desc">Framerate-independent movement. Smooth 60 FPS on any machine, consistent on any hardware.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- UPCOMING FEATURES -->
+<section class="section" id="upcoming">
+  <div class="container">
+    <h2 class="section-h2">Coming soon</h2>
+    <p class="section-sub">Planned features in active development.</p>
+    <div class="upcoming-grid reveal-parent">
+      <div class="u-item reveal-child" style="--i:0">
+        <p class="u-label">Power-up</p>
+        <h3 class="u-name">Speed Boost</h3>
+        <p class="u-desc">Ball velocity surges for 7 seconds.</p>
+        <span class="u-status">Planned</span>
+      </div>
+      <div class="u-item reveal-child" style="--i:1">
+        <p class="u-label">Power-up</p>
+        <h3 class="u-name">Slow Ball</h3>
+        <p class="u-desc">Drop the ball to a crawl - buy time to recover.</p>
+        <span class="u-status">Planned</span>
+      </div>
+      <div class="u-item reveal-child" style="--i:2">
+        <p class="u-label">Power-up</p>
+        <h3 class="u-name">Big Paddle</h3>
+        <p class="u-desc">Your paddle expands to 150% for one pickup.</p>
+        <span class="u-status">Planned</span>
+      </div>
+      <div class="u-item reveal-child" style="--i:3">
+        <p class="u-label">Power-up</p>
+        <h3 class="u-name">Multi-Ball</h3>
+        <p class="u-desc">Two balls on the field simultaneously.</p>
+        <span class="u-status">Planned</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GAME MODES -->
+<section class="section section-alt" id="modes">
+  <div class="container">
+    <p class="section-label">Game Modes</p>
+    <h2 class="section-h2">Three ways to play</h2>
+    <p class="section-sub">Pick the format that fits your session.</p>
+    <div class="modes-grid reveal-parent">
+      <div class="mode-card reveal-child" style="--i:0">
+        <div class="mode-num">01</div>
+        <span class="tag tag-yel">Classic</span>
+        <h3 class="mode-name">First to 11</h3>
+        <p class="mode-detail">Continuous single match. No sets, no clock - first to eleven wins. The original Pong format.</p>
+        <span class="mode-badge badge-yel">11 points</span>
+      </div>
+      <div class="mode-card mode-featured reveal-child" style="--i:1">
+        <div class="mode-num">02</div>
+        <span class="tag tag-cyan">Sets Format</span>
+        <h3 class="mode-name mode-name-cyan">Best of 3 Sets</h3>
+        <p class="mode-detail">Each set goes to 7 points. Win two sets to take the match. Momentum swings between sets give every game a second life.</p>
+        <span class="mode-badge badge-cyan">7 pts per set</span>
+      </div>
+      <div class="mode-card reveal-child" style="--i:2">
+        <div class="mode-num">03</div>
+        <span class="tag tag-mag">Timed</span>
+        <h3 class="mode-name">3 Minute Match</h3>
+        <p class="mode-detail">Most points in 3 minutes wins. Tied when the clock hits zero? Sudden death: next point ends it.</p>
+        <span class="mode-badge badge-mag">Sudden death OT</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CPU MODE -->
+<section class="section" id="cpu">
+  <div class="container">
+    <div class="cpu-split reveal-parent">
+      <div class="cpu-left reveal-child" style="--i:0">
+        <h2 class="section-h2" style="margin-bottom:16px">Four AI tiers.<br>One for every skill level.</h2>
+        <p class="section-sub" style="margin-bottom:0">The CPU uses reaction-delay simulation - it cannot respond faster than its tier allows. Insane plays in real time with zero delay. Easy gives you room to learn.</p>
+      </div>
+      <div class="cpu-tiers reveal-child" style="--i:1">
+        <div class="cpu-tier">
+          <div class="tier-dot" style="background:#00cc66;box-shadow:0 0 6px #00cc66"></div>
+          <span class="tier-name" style="color:#00cc66">EASY</span>
+          <div class="tier-bar-wrap"><div class="tier-bar" style="width:20%;background:#00cc66"></div></div>
+          <span class="tier-delay">0.35s delay</span>
+        </div>
+        <div class="cpu-tier">
+          <div class="tier-dot" style="background:var(--yellow);box-shadow:0 0 6px var(--yellow)"></div>
+          <span class="tier-name" style="color:var(--yellow)">MEDIUM</span>
+          <div class="tier-bar-wrap"><div class="tier-bar" style="width:50%;background:var(--yellow)"></div></div>
+          <span class="tier-delay">0.18s delay</span>
+        </div>
+        <div class="cpu-tier">
+          <div class="tier-dot" style="background:#ff6600;box-shadow:0 0 6px #ff6600"></div>
+          <span class="tier-name" style="color:#ff6600">HARD</span>
+          <div class="tier-bar-wrap"><div class="tier-bar" style="width:78%;background:#ff6600"></div></div>
+          <span class="tier-delay">0.06s delay</span>
+        </div>
+        <div class="cpu-tier tier-insane">
+          <div class="tier-dot" style="background:#ff2222;box-shadow:0 0 8px #ff2222"></div>
+          <span class="tier-name" style="color:#ff2222">INSANE</span>
+          <div class="tier-bar-wrap"><div class="tier-bar" style="width:100%;background:#ff2222"></div></div>
+          <span class="tier-delay">0.00s delay</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTROLS -->
+<section class="section section-alt" id="controls">
+  <div class="container">
+    <h2 class="section-h2">Controls</h2>
+    <p class="section-sub">Two players, one keyboard.</p>
+    <div class="controls-grid reveal-parent">
+      <div class="player-block reveal-child" style="--i:0">
+        <p class="player-label player-cyan">Player 1 - Left</p>
+        <div class="key-rows">
+          <div class="key-row"><kbd class="key key-cyan">W</kbd><span class="key-action">Move up</span></div>
+          <div class="key-row"><kbd class="key key-cyan">S</kbd><span class="key-action">Move down</span></div>
+          <div class="key-row"><kbd class="key key-cyan key-wide">LSHIFT</kbd><span class="key-action">Activate smash</span></div>
+        </div>
+      </div>
+      <div class="player-block reveal-child" style="--i:1">
+        <p class="player-label player-mag">Player 2 - Right</p>
+        <div class="key-rows">
+          <div class="key-row"><kbd class="key key-mag">&#x2191;</kbd><span class="key-action">Move up</span></div>
+          <div class="key-row"><kbd class="key key-mag">&#x2193;</kbd><span class="key-action">Move down</span></div>
+          <div class="key-row"><kbd class="key key-mag key-wide">RSHIFT</kbd><span class="key-action">Activate smash</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="controls-shared reveal-child" style="--i:2">
+      <div class="key-row"><kbd class="key">ESC</kbd><span class="key-action">Pause / Return to menu</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section class="section" id="install">
+  <div class="container">
+    <p class="section-label">Get it running</p>
+    <h2 class="section-h2">Install in 3 commands</h2>
+    <div class="install-split reveal-parent">
+      <div class="reveal-child" style="--i:0">
+        <div class="code-block">
+          <span class="c-comment"># Clone the repository</span><br>
+          <span class="c-cmd">git clone</span> <span class="c-arg">https://github.com/Funnykid7/py-pong</span><br>
+          <span class="c-cmd">cd</span> py-pong<br>
+          <br>
+          <span class="c-comment"># Install dependencies</span><br>
+          <span class="c-cmd">pip install</span> -r requirements.txt<br>
+          <br>
+          <span class="c-comment"># Launch</span><br>
+          <span class="c-cmd">python</span> main.py
+        </div>
+        <div class="install-actions">
+          <a href="https://github.com/Funnykid7/py-pong/archive/refs/heads/main.zip" class="btn-primary">Download ZIP</a>
+          <a href="https://github.com/Funnykid7/py-pong" class="btn-secondary" target="_blank" rel="noopener">GitHub Repo</a>
+        </div>
+      </div>
+      <div class="install-reqs reveal-child" style="--i:1">
+        <h4 class="reqs-title">Requirements</h4>
+        <div class="req-item"><div class="req-dot"></div><span class="req-text">Python 3.8 or later</span></div>
+        <div class="req-item"><div class="req-dot"></div><span class="req-text">pygame-ce 2.5.0 or later</span></div>
+        <div class="req-item"><div class="req-dot"></div><span class="req-text">Windows, macOS, or Linux</span></div>
+        <div class="req-item"><div class="req-dot"></div><span class="req-text">No internet connection needed after install</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <span class="footer-logo">PY-PONG</span>
+    <div class="footer-links">
+      <a href="https://github.com/Funnykid7/py-pong/blob/main/LICENSE" class="footer-link" target="_blank" rel="noopener">MIT License</a>
+      <a href="https://github.com/Funnykid7/py-pong" class="footer-link" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/Funnykid7/py-pong/issues" class="footer-link" target="_blank" rel="noopener">Issues</a>
+    </div>
+    <span class="footer-copy">Built with Python + pygame-ce</span>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
