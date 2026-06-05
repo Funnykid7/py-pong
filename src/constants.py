@@ -60,3 +60,24 @@ PARTICLE_LIFETIME_MAX = 0.8
 # Final Smash meter
 SMASH_BASE_CHARGE_RATE = 0.025   # fills in ~40s at zero gap
 SMASH_PER_POINT_CHARGE = 0.020   # additional rate per point behind
+
+# CPU / opponent mode
+STATE_DIFFICULTY = "difficulty"
+OPPONENT_HUMAN = "human"
+OPPONENT_CPU = "cpu"
+
+DIFFICULTY_OPTIONS = ["EASY", "MEDIUM", "HARD", "INSANE"]
+
+DIFFICULTY_COLORS = {
+    "EASY":   (105, 255,  71),
+    "MEDIUM": (255, 215,  64),
+    "HARD":   (255, 109,   0),
+    "INSANE": (255,  23,  68),
+}
+
+CPU_PARAMS = {
+    "EASY":   {"max_speed": 180, "reaction_delay": 0.35, "dead_zone": 20},
+    "MEDIUM": {"max_speed": 320, "reaction_delay": 0.18, "dead_zone": 15},
+    "HARD":   {"max_speed": 480, "reaction_delay": 0.06, "dead_zone": 10},
+    "INSANE": {"max_speed": 650, "reaction_delay": 0.00, "dead_zone":  5},
+}
