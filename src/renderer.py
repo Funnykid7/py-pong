@@ -197,6 +197,8 @@ def draw_difficulty_select(surface, font_large, font_small, selected: int):
         color = DIFFICULTY_COLORS[name] if i == selected else (100, 100, 120)
         text = font_large.render(name, True, color)
         surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, y))
+    hint = font_small.render("ESC  Back", True, (60, 60, 80))
+    surface.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, SCREEN_H - 50))
 
 
 def draw_pause(surface, font_large, selected: int):
