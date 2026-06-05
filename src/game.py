@@ -72,30 +72,29 @@ class Game:
     def _init_audio(self):
         self.sfx: dict = {}
         for name, path in [
-            ("hit", "assets/sounds/ball hit.mp3"),
-            ("score", "assets/sounds/score.wav"),
+            ("hit",     "assets/sounds/ball hit.mp3"),
+            ("point",   "assets/sounds/point.mp3"),
+            ("victory", "assets/sounds/victory_screen.mp3"),
+            ("losing",  "assets/sounds/losing_screen.mp3"),
             ("powerup", "assets/sounds/powerup.wav"),
-            ("win", "assets/sounds/win.wav"),
         ]:
             try:
                 self.sfx[name] = pygame.mixer.Sound(path)
             except Exception:
                 self.sfx[name] = None
 
-        self.music_channels = [pygame.mixer.Channel(0), pygame.mixer.Channel(1)]
-        self.music_normal = None
-        self.music_intense = None
-        try:
-            self.music_normal = pygame.mixer.Sound("assets/sounds/music_normal.ogg")
-            self.music_intense = pygame.mixer.Sound("assets/sounds/music_intense.ogg")
-        except Exception:
-            pass
-        self.current_music = "normal"
-
         self._menu_music_loaded = False
         try:
             pygame.mixer.music.load("assets/sounds/main theme.mp3")
             self._menu_music_loaded = True
+        except Exception:
+            pass
+
+        self._bg_channel = pygame.mixer.Channel(0)
+        self._bg_theme: pygame.mixer.Sound | None = None
+        try:
+            self._bg_theme = pygame.mixer.Sound("assets/sounds/background_theme.mp3")
+            self._bg_theme.set_volume(0.05)
         except Exception:
             pass
 
@@ -112,20 +111,6 @@ class Game:
         sfx = self.sfx.get(name)
         if sfx:
             sfx.play()
-
-    def _update_music(self):
-        if not self.music_normal or not self.music_intense:
-            return
-        if self.rally_count >= 5 and self.current_music == "normal":
-            self.music_channels[0].fadeout(500)
-            self.music_channels[1].play(self.music_intense, loops=-1, fade_ms=500)
-            self.music_channels[0], self.music_channels[1] = self.music_channels[1], self.music_channels[0]
-            self.current_music = "intense"
-        elif self.rally_count < 5 and self.current_music == "intense":
-            self.music_channels[0].fadeout(500)
-            self.music_channels[1].play(self.music_normal, loops=-1, fade_ms=500)
-            self.music_channels[0], self.music_channels[1] = self.music_channels[1], self.music_channels[0]
-            self.current_music = "normal"
 
     def _update_smash_meters(self, dt: float):
         p1_gap = max(0, self.p2.score - self.p1.score)
@@ -267,8 +252,8 @@ class Game:
 
     def _start_match(self):
         self._stop_menu_music()
-        if self.music_normal:
-            self.music_channels[0].play(self.music_normal, loops=-1)
+        if self._bg_theme:
+            self._bg_channel.play(self._bg_theme, loops=-1)
         self.p1.score = 0
         self.p2.score = 0
         self.p1.sets_won = 0
@@ -301,6 +286,7 @@ class Game:
         self.state = STATE_MENU
         self.menu_selected = 0
         self.shake.trauma = 0.0
+        self._bg_channel.stop()
         self._start_menu_music()
 
     def _update(self, dt: float):
@@ -356,7 +342,6 @@ class Game:
                 else:
                     self._end_match()
 
-        self._update_music()
 
     def _handle_collisions(self):
         scored: list[tuple[int, Ball]] = []
@@ -395,7 +380,7 @@ class Game:
     def _score(self, scorer: int, scored_ball: Ball):
         if self.state != STATE_PLAYING:
             return
-        self._play_sfx("score")
+        self._play_sfx("point")
         wall_x = 0.0 if scorer == 2 else float(SCREEN_W)
         color = P2_COLOR if scorer == 2 else P1_COLOR
         self.particles.emit_score(wall_x, color)
@@ -447,7 +432,11 @@ class Game:
             else:
                 winner = 1
         self.winner = winner
-        self._play_sfx("win")
+        self._bg_channel.fadeout(500)
+        if self.opponent_type == OPPONENT_CPU and winner == 2:
+            self._play_sfx("losing")
+        else:
+            self._play_sfx("victory")
         self.particles.emit_score(SCREEN_W if winner == 1 else 0,
                                   P1_COLOR if winner == 1 else P2_COLOR)
         self.gameover_pulse = 0.0
