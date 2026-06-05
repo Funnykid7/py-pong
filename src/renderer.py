@@ -50,7 +50,8 @@ def draw_background(surface: pygame.Surface):
 def draw_hud(surface, p1, p2, font_large, font_small,
              game_mode: str, time_left, sets,
              p1_smash: float, p2_smash: float,
-             p1_ready: bool, p2_ready: bool, smash_pulse_t: float):
+             p1_ready: bool, p2_ready: bool, smash_pulse_t: float,
+             cpu_mode: bool = False):
     pygame.draw.rect(surface, (15, 15, 25), (0, 0, SCREEN_W, HUD_HEIGHT))
     pygame.draw.line(surface, (40, 40, 60), (0, HUD_HEIGHT), (SCREEN_W, HUD_HEIGHT), 1)
 
@@ -81,7 +82,8 @@ def draw_hud(surface, p1, p2, font_large, font_small,
         _draw_smash_meter(surface, 7 * SCREEN_W // 8, p2_smash, p2_ready, smash_pulse_t,
                           P2_COLOR, "[RSHIFT]", font_small)
 
-    hint = font_small.render("W/S                    ↑/↓", True, (60, 60, 80))
+    hint_text = "W/S" if cpu_mode else "W/S                    ↑/↓"
+    hint = font_small.render(hint_text, True, (60, 60, 80))
     surface.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, SCREEN_H - 22))
 
 
