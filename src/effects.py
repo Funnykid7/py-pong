@@ -64,3 +64,52 @@ class ParticleSystem:
 
     def clear(self):
         self.particles.clear()
+
+
+class TransitionManager:
+    def __init__(self):
+        self._state = "idle"   # "idle" | "fade_out" | "fade_in"
+        self._progress = 0.0
+        self._duration = 0.25
+        self._callback = None
+        self._overlay = None   # allocated lazily on first draw()
+
+    def start(self, callback, duration: float = 0.25):
+        if self._state != "idle":
+            return
+        self._callback = callback
+        self._duration = duration
+        self._progress = 0.0
+        self._state = "fade_out"
+
+    def update(self, dt: float):
+        if self._state == "idle":
+            return
+        self._progress += dt / self._duration
+        if self._progress >= 1.0:
+            if self._state == "fade_out":
+                if self._callback:
+                    self._callback()
+                    self._callback = None
+                self._state = "fade_in"
+                self._progress = 0.0
+            elif self._state == "fade_in":
+                self._state = "idle"
+                self._progress = 0.0
+
+    def draw(self, surf: pygame.Surface):
+        if self._state == "idle":
+            return
+        if self._overlay is None or self._overlay.get_size() != surf.get_size():
+            self._overlay = pygame.Surface(surf.get_size())
+            self._overlay.fill((0, 0, 0))
+        if self._state == "fade_out":
+            alpha = int(255 * min(1.0, self._progress))
+        else:
+            alpha = int(255 * max(0.0, 1.0 - self._progress))
+        self._overlay.set_alpha(max(0, min(255, alpha)))
+        surf.blit(self._overlay, (0, 0))
+
+    @property
+    def blocking(self) -> bool:
+        return self._state != "idle"

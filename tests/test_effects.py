@@ -69,3 +69,68 @@ def test_particle_system_clear():
     ps.emit_score(640, (255, 230, 0))
     ps.clear()
     assert len(ps.particles) == 0
+
+
+from src.effects import TransitionManager
+
+
+def test_transition_not_blocking_at_start():
+    tm = TransitionManager()
+    assert not tm.blocking
+
+
+def test_transition_blocking_after_start():
+    tm = TransitionManager()
+    tm.start(lambda: None)
+    assert tm.blocking
+
+
+def test_transition_callback_fires_at_end_of_fade_out():
+    fired = []
+    tm = TransitionManager()
+    tm.start(lambda: fired.append(1), duration=0.25)
+    tm.update(0.30)
+    assert fired == [1]
+
+
+def test_transition_still_blocking_during_fade_in():
+    tm = TransitionManager()
+    tm.start(lambda: None, duration=0.1)
+    tm.update(0.15)  # fade_out completes, fade_in begins
+    assert tm.blocking
+
+
+def test_transition_idle_after_full_cycle():
+    tm = TransitionManager()
+    tm.start(lambda: None, duration=0.1)
+    tm.update(0.15)  # fade_out → fade_in
+    tm.update(0.15)  # fade_in → idle
+    assert not tm.blocking
+
+
+def test_transition_second_start_ignored_while_active():
+    fired = []
+    tm = TransitionManager()
+    tm.start(lambda: fired.append(1), duration=0.5)
+    tm.start(lambda: fired.append(2), duration=0.1)  # must be ignored
+    tm.update(0.6)
+    assert fired == [1]
+
+
+def test_transition_draw_noop_when_idle():
+    surf = pygame.Surface((100, 100))
+    surf.fill((255, 0, 0))
+    tm = TransitionManager()
+    tm.draw(surf)
+    assert surf.get_at((50, 50))[:3] == (255, 0, 0)
+
+
+def test_transition_draw_darkens_surface_during_fade_out():
+    surf = pygame.Surface((100, 100))
+    surf.fill((255, 255, 255))
+    tm = TransitionManager()
+    tm.start(lambda: None, duration=1.0)
+    tm.update(0.5)  # progress 0.5 → overlay alpha 127
+    tm.draw(surf)
+    r = surf.get_at((50, 50))[0]
+    assert r < 200  # white significantly darkened by black overlay
