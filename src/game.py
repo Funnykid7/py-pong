@@ -163,7 +163,9 @@ class Game:
             pygame.display.flip()
 
     def _handle_event(self, event):
-        if self.transition.blocking:
+        if self.transition.blocking and self.state in (
+            STATE_MENU, STATE_DIFFICULTY, STATE_MODE_SELECT, STATE_GAME_OVER
+        ):
             return
         if self.state == STATE_MENU:
             return self._handle_menu_event(event)
