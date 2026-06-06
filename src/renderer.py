@@ -268,7 +268,7 @@ def draw_difficulty_select(surface, font_large, font_small, selected: int,
         else:
             bc = DIFFICULTY_COLORS[name]
             dim = (int(bc[0] * 0.6), int(bc[1] * 0.6), int(bc[2] * 0.6))
-            text = font_large.render(name, True, tuple(dim))
+            text = font_large.render(name, True, dim)
             surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, y))
     hint = font_small.render("ESC  Back", True, (60, 60, 80))
     surface.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, SCREEN_H - 50))

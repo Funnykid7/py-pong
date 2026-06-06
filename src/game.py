@@ -205,6 +205,7 @@ class Game:
                 self.cpu_difficulty = DIFFICULTY_OPTIONS[self.difficulty_selected]
                 self.state = STATE_MODE_SELECT
             elif event.key == pygame.K_ESCAPE:
+                self.menu_hover_t = 0.0
                 self.state = STATE_MENU
 
     def _handle_mode_select_event(self, event):
@@ -220,6 +221,7 @@ class Game:
                 self.game_mode = modes[self.mode_selected]
                 self._start_match()
             elif event.key == pygame.K_ESCAPE:
+                self.menu_hover_t = 0.0
                 if self.opponent_type == OPPONENT_CPU:
                     self.state = STATE_DIFFICULTY
                 else:
@@ -296,6 +298,7 @@ class Game:
     def _reset_to_menu(self):
         self.state = STATE_MENU
         self.menu_selected = 0
+        self.menu_hover_t = 0.0
         self.shake.trauma = 0.0
         self._bg_channel.stop()
         self._start_menu_music()
