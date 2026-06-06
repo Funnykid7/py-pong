@@ -295,7 +295,7 @@ class Game:
         self._start_menu_music()
 
     def _update(self, dt: float):
-        self.menu_hover_t += dt
+        self.menu_hover_t = (self.menu_hover_t + dt) % (2 * math.pi)
         if self.state == STATE_MENU:
             self._update_menu(dt)
         elif self.state in (STATE_DIFFICULTY, STATE_MODE_SELECT):

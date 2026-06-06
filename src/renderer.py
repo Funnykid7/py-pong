@@ -18,6 +18,21 @@ POWERUP_LABELS = {
     "MULTI_BALL": "MULTI",
 }
 
+_PARTICLE_SURFS: dict[int, pygame.Surface] = {}
+
+
+def _draw_menu_particles(surface: pygame.Surface, menu_particles: list, hover_t: float):
+    for p in menu_particles:
+        alpha = max(0, min(255, int(160 + 80 * math.sin(hover_t + p["phase"]))))
+        r = p["radius"]
+        if r not in _PARTICLE_SURFS:
+            s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
+            _PARTICLE_SURFS[r] = s
+        dot_surf = _PARTICLE_SURFS[r]
+        dot_surf.fill((0, 0, 0, 0))
+        pygame.draw.circle(dot_surf, (*p["color"], alpha), (r, r), r)
+        surface.blit(dot_surf, (int(p["pos"].x) - r, int(p["pos"].y) - r))
+
 
 def draw_glow(surface: pygame.Surface, color: tuple, center: tuple, radius: int):
     for scale, alpha in [(1.8, 30), (1.4, 80), (1.0, 255)]:
@@ -159,13 +174,8 @@ def draw_countdown(surface: pygame.Surface, count: int, font_huge):
 def draw_menu(surface, font_title, font_large, font_small, selected: int,
               anim_ball_pos: tuple, menu_particles: list | None = None, hover_t: float = 0.0):
     draw_background(surface)
-    if menu_particles:
-        for p in menu_particles:
-            alpha = max(0, min(255, int(160 + 80 * math.sin(hover_t + p["phase"]))))
-            dot_surf = pygame.Surface((p["radius"] * 2, p["radius"] * 2), pygame.SRCALPHA)
-            pygame.draw.circle(dot_surf, (*p["color"], alpha),
-                               (p["radius"], p["radius"]), p["radius"])
-            surface.blit(dot_surf, (int(p["pos"].x) - p["radius"], int(p["pos"].y) - p["radius"]))
+    if menu_particles is not None:
+        _draw_menu_particles(surface, menu_particles, hover_t)
     draw_glow(surface, ACCENT_COLOR, (int(anim_ball_pos[0]), int(anim_ball_pos[1])), BALL_SIZE // 2)
     title = font_title.render("PY-PONG", True, P1_COLOR)
     surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 180))
@@ -179,13 +189,8 @@ def draw_mode_select(surface, font_large, font_small, selected: int,
                      context_label: str | None = None, menu_particles: list | None = None,
                      hover_t: float = 0.0):
     draw_background(surface)
-    if menu_particles:
-        for p in menu_particles:
-            alpha = max(0, min(255, int(160 + 80 * math.sin(hover_t + p["phase"]))))
-            dot_surf = pygame.Surface((p["radius"] * 2, p["radius"] * 2), pygame.SRCALPHA)
-            pygame.draw.circle(dot_surf, (*p["color"], alpha),
-                               (p["radius"], p["radius"]), p["radius"])
-            surface.blit(dot_surf, (int(p["pos"].x) - p["radius"], int(p["pos"].y) - p["radius"]))
+    if menu_particles is not None:
+        _draw_menu_particles(surface, menu_particles, hover_t)
     title = font_large.render("SELECT MODE", True, WHITE)
     surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 160))
     modes = [
@@ -208,13 +213,8 @@ def draw_mode_select(surface, font_large, font_small, selected: int,
 def draw_difficulty_select(surface, font_large, font_small, selected: int,
                            menu_particles: list | None = None, hover_t: float = 0.0):
     draw_background(surface)
-    if menu_particles:
-        for p in menu_particles:
-            alpha = max(0, min(255, int(160 + 80 * math.sin(hover_t + p["phase"]))))
-            dot_surf = pygame.Surface((p["radius"] * 2, p["radius"] * 2), pygame.SRCALPHA)
-            pygame.draw.circle(dot_surf, (*p["color"], alpha),
-                               (p["radius"], p["radius"]), p["radius"])
-            surface.blit(dot_surf, (int(p["pos"].x) - p["radius"], int(p["pos"].y) - p["radius"]))
+    if menu_particles is not None:
+        _draw_menu_particles(surface, menu_particles, hover_t)
     title = font_large.render("SELECT DIFFICULTY", True, WHITE)
     surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 160))
     for i, name in enumerate(DIFFICULTY_OPTIONS):
