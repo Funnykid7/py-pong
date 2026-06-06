@@ -77,6 +77,8 @@ class TransitionManager:
     def start(self, callback, duration: float = 0.25):
         if self._state != "idle":
             return
+        if duration <= 0:
+            duration = 0.25
         self._callback = callback
         self._duration = duration
         self._progress = 0.0
@@ -88,11 +90,11 @@ class TransitionManager:
         self._progress += dt / self._duration
         if self._progress >= 1.0:
             if self._state == "fade_out":
-                if self._callback:
-                    self._callback()
-                    self._callback = None
+                cb, self._callback = self._callback, None
                 self._state = "fade_in"
                 self._progress = 0.0
+                if cb:
+                    cb()
             elif self._state == "fade_in":
                 self._state = "idle"
                 self._progress = 0.0

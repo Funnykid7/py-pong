@@ -3,7 +3,7 @@ from src.constants import (
     SHAKE_MAX_OFFSET, SHAKE_DECAY, PARTICLE_COUNT_SCORE,
     PARTICLE_LIFETIME_MIN, PARTICLE_LIFETIME_MAX,
 )
-from src.effects import ScreenShake, ParticleSystem
+from src.effects import ScreenShake, ParticleSystem, TransitionManager
 
 
 def test_shake_trauma_decays_each_frame():
@@ -69,9 +69,6 @@ def test_particle_system_clear():
     ps.emit_score(640, (255, 230, 0))
     ps.clear()
     assert len(ps.particles) == 0
-
-
-from src.effects import TransitionManager
 
 
 def test_transition_not_blocking_at_start():
