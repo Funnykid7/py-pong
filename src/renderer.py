@@ -156,8 +156,16 @@ def draw_countdown(surface: pygame.Surface, count: int, font_huge):
         surface.blit(text, (x, y))
 
 
-def draw_menu(surface, font_title, font_large, font_small, selected: int, anim_ball_pos: tuple):
+def draw_menu(surface, font_title, font_large, font_small, selected: int,
+              anim_ball_pos: tuple, menu_particles: list | None = None, hover_t: float = 0.0):
     draw_background(surface)
+    if menu_particles:
+        for p in menu_particles:
+            alpha = max(0, min(255, int(160 + 80 * math.sin(hover_t + p["phase"]))))
+            dot_surf = pygame.Surface((p["radius"] * 2, p["radius"] * 2), pygame.SRCALPHA)
+            pygame.draw.circle(dot_surf, (*p["color"], alpha),
+                               (p["radius"], p["radius"]), p["radius"])
+            surface.blit(dot_surf, (int(p["pos"].x) - p["radius"], int(p["pos"].y) - p["radius"]))
     draw_glow(surface, ACCENT_COLOR, (int(anim_ball_pos[0]), int(anim_ball_pos[1])), BALL_SIZE // 2)
     title = font_title.render("PY-PONG", True, P1_COLOR)
     surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 180))
@@ -167,8 +175,17 @@ def draw_menu(surface, font_title, font_large, font_small, selected: int, anim_b
         surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, 320 + i * 70))
 
 
-def draw_mode_select(surface, font_large, font_small, selected: int, context_label: str | None = None):
+def draw_mode_select(surface, font_large, font_small, selected: int,
+                     context_label: str | None = None, menu_particles: list | None = None,
+                     hover_t: float = 0.0):
     draw_background(surface)
+    if menu_particles:
+        for p in menu_particles:
+            alpha = max(0, min(255, int(160 + 80 * math.sin(hover_t + p["phase"]))))
+            dot_surf = pygame.Surface((p["radius"] * 2, p["radius"] * 2), pygame.SRCALPHA)
+            pygame.draw.circle(dot_surf, (*p["color"], alpha),
+                               (p["radius"], p["radius"]), p["radius"])
+            surface.blit(dot_surf, (int(p["pos"].x) - p["radius"], int(p["pos"].y) - p["radius"]))
     title = font_large.render("SELECT MODE", True, WHITE)
     surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 160))
     modes = [
@@ -188,8 +205,16 @@ def draw_mode_select(surface, font_large, font_small, selected: int, context_lab
         surface.blit(ctx, (SCREEN_W // 2 - ctx.get_width() // 2, SCREEN_H - 50))
 
 
-def draw_difficulty_select(surface, font_large, font_small, selected: int):
+def draw_difficulty_select(surface, font_large, font_small, selected: int,
+                           menu_particles: list | None = None, hover_t: float = 0.0):
     draw_background(surface)
+    if menu_particles:
+        for p in menu_particles:
+            alpha = max(0, min(255, int(160 + 80 * math.sin(hover_t + p["phase"]))))
+            dot_surf = pygame.Surface((p["radius"] * 2, p["radius"] * 2), pygame.SRCALPHA)
+            pygame.draw.circle(dot_surf, (*p["color"], alpha),
+                               (p["radius"], p["radius"]), p["radius"])
+            surface.blit(dot_surf, (int(p["pos"].x) - p["radius"], int(p["pos"].y) - p["radius"]))
     title = font_large.render("SELECT DIFFICULTY", True, WHITE)
     surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 160))
     for i, name in enumerate(DIFFICULTY_OPTIONS):

@@ -1,4 +1,6 @@
 import pygame
+import math
+import random
 from src.constants import (
     SCREEN_W, SCREEN_H, FPS, HUD_HEIGHT, BG_COLOR,
     PADDLE_W, PADDLE_H, PADDLE_MARGIN, PADDLE_SPEED,
@@ -60,6 +62,9 @@ class Game:
 
         self.menu_ball_pos = pygame.Vector2(SCREEN_W // 2, SCREEN_H // 2)
         self.menu_ball_vel = pygame.Vector2(300, 220)
+
+        self.menu_particles: list[dict] = self._make_menu_particles()
+        self.menu_hover_t: float = 0.0
 
         self.opponent_type: str = OPPONENT_HUMAN
         self.cpu_difficulty: str = "MEDIUM"
@@ -290,10 +295,11 @@ class Game:
         self._start_menu_music()
 
     def _update(self, dt: float):
+        self.menu_hover_t += dt
         if self.state == STATE_MENU:
             self._update_menu(dt)
-        elif self.state == STATE_DIFFICULTY:
-            pass
+        elif self.state in (STATE_DIFFICULTY, STATE_MODE_SELECT):
+            self._update_menu_particles(dt)
         elif self.state == STATE_PLAYING:
             self._update_playing(dt)
         elif self.state == STATE_GAME_OVER:
@@ -306,6 +312,36 @@ class Game:
             self.menu_ball_vel.x *= -1
         if self.menu_ball_pos.y < 0 or self.menu_ball_pos.y > SCREEN_H:
             self.menu_ball_vel.y *= -1
+        self._update_menu_particles(dt)
+
+    def _make_menu_particles(self) -> list[dict]:
+        particles = []
+        for _ in range(60):
+            angle = random.uniform(0, 2 * math.pi)
+            speed = random.uniform(15, 40)
+            particles.append({
+                "pos": pygame.Vector2(
+                    random.uniform(0, SCREEN_W),
+                    random.uniform(0, SCREEN_H),
+                ),
+                "vel": pygame.Vector2(math.cos(angle) * speed, math.sin(angle) * speed),
+                "phase": random.uniform(0, 2 * math.pi),
+                "color": random.choice([P1_COLOR, P2_COLOR]),
+                "radius": random.randint(2, 4),
+            })
+        return particles
+
+    def _update_menu_particles(self, dt: float):
+        for p in self.menu_particles:
+            p["pos"] += p["vel"] * dt
+            if p["pos"].x < 0:
+                p["pos"].x = SCREEN_W
+            elif p["pos"].x > SCREEN_W:
+                p["pos"].x = 0
+            if p["pos"].y < 0:
+                p["pos"].y = SCREEN_H
+            elif p["pos"].y > SCREEN_H:
+                p["pos"].y = 0
 
     def _update_playing(self, dt: float):
         if self.countdown > 0:
@@ -452,14 +488,17 @@ class Game:
 
         if self.state == STATE_MENU:
             renderer.draw_menu(game_surf, self.font_title, self.font_large, self.font_small,
-                               self.menu_selected, (self.menu_ball_pos.x, self.menu_ball_pos.y))
+                               self.menu_selected, (self.menu_ball_pos.x, self.menu_ball_pos.y),
+                               self.menu_particles, self.menu_hover_t)
         elif self.state == STATE_DIFFICULTY:
             renderer.draw_difficulty_select(game_surf, self.font_large, self.font_small,
-                                            self.difficulty_selected)
+                                            self.difficulty_selected,
+                                            self.menu_particles, self.menu_hover_t)
         elif self.state == STATE_MODE_SELECT:
             context = f"1vCPU · {self.cpu_difficulty}" if self.opponent_type == OPPONENT_CPU else None
             renderer.draw_mode_select(game_surf, self.font_large, self.font_small,
-                                      self.mode_selected, context)
+                                      self.mode_selected, context,
+                                      self.menu_particles, self.menu_hover_t)
         elif self.state in (STATE_PLAYING, STATE_PAUSED):
             renderer.draw_background(game_surf)
             for ball in self.balls:
