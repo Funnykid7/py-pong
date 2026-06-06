@@ -16,7 +16,7 @@ from src.constants import (
     SMASH_BASE_CHARGE_RATE, SMASH_PER_POINT_CHARGE,
 )
 from src.entities import Paddle, Ball
-from src.effects import ScreenShake, ParticleSystem
+from src.effects import ScreenShake, ParticleSystem, TransitionManager
 from src.cpu import CPUController
 import src.renderer as renderer
 
@@ -40,6 +40,7 @@ class Game:
 
         self.shake = ScreenShake()
         self.particles = ParticleSystem()
+        self.transition = TransitionManager()
 
         self.countdown = 0
         self.countdown_timer = 0.0
@@ -162,6 +163,8 @@ class Game:
             pygame.display.flip()
 
     def _handle_event(self, event):
+        if self.transition.blocking:
+            return
         if self.state == STATE_MENU:
             return self._handle_menu_event(event)
         elif self.state == STATE_DIFFICULTY:
@@ -185,11 +188,15 @@ class Game:
                 self.menu_hover_t = 0.0
             elif event.key == pygame.K_RETURN:
                 if self.menu_selected == 0:
-                    self.opponent_type = OPPONENT_HUMAN
-                    self.state = STATE_MODE_SELECT
+                    def _go_1v1():
+                        self.opponent_type = OPPONENT_HUMAN
+                        self.state = STATE_MODE_SELECT
+                    self.transition.start(_go_1v1)
                 elif self.menu_selected == 1:
-                    self.opponent_type = OPPONENT_CPU
-                    self.state = STATE_DIFFICULTY
+                    def _go_cpu():
+                        self.opponent_type = OPPONENT_CPU
+                        self.state = STATE_DIFFICULTY
+                    self.transition.start(_go_cpu)
                 else:
                     return "quit"
 
@@ -202,11 +209,14 @@ class Game:
                 self.difficulty_selected = (self.difficulty_selected + 1) % 4
                 self.menu_hover_t = 0.0
             elif event.key == pygame.K_RETURN:
-                self.cpu_difficulty = DIFFICULTY_OPTIONS[self.difficulty_selected]
-                self.state = STATE_MODE_SELECT
+                diff = DIFFICULTY_OPTIONS[self.difficulty_selected]
+                def _go_mode():
+                    self.cpu_difficulty = diff
+                    self.state = STATE_MODE_SELECT
+                self.transition.start(_go_mode)
             elif event.key == pygame.K_ESCAPE:
                 self.menu_hover_t = 0.0
-                self.state = STATE_MENU
+                self.transition.start(lambda: setattr(self, "state", STATE_MENU))
 
     def _handle_mode_select_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -218,14 +228,17 @@ class Game:
                 self.menu_hover_t = 0.0
             elif event.key == pygame.K_RETURN:
                 modes = [MODE_FIRST_TO_11, MODE_BEST_OF_3, MODE_TIMED]
-                self.game_mode = modes[self.mode_selected]
-                self._start_match()
+                mode = modes[self.mode_selected]
+                def _start():
+                    self.game_mode = mode
+                    self._start_match()
+                self.transition.start(_start)
             elif event.key == pygame.K_ESCAPE:
                 self.menu_hover_t = 0.0
                 if self.opponent_type == OPPONENT_CPU:
-                    self.state = STATE_DIFFICULTY
+                    self.transition.start(lambda: setattr(self, "state", STATE_DIFFICULTY))
                 else:
-                    self.state = STATE_MENU
+                    self.transition.start(lambda: setattr(self, "state", STATE_MENU))
 
     def _handle_playing_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -259,9 +272,9 @@ class Game:
                 self.gameover_selected = (self.gameover_selected + 1) % 2
             elif event.key == pygame.K_RETURN:
                 if self.gameover_selected == 0:
-                    self._start_match()
+                    self.transition.start(self._start_match)
                 else:
-                    self._reset_to_menu()
+                    self.transition.start(self._reset_to_menu)
 
     def _start_match(self):
         self._stop_menu_music()
@@ -305,6 +318,7 @@ class Game:
 
     def _update(self, dt: float):
         self.menu_hover_t = (self.menu_hover_t + dt) % (2 * math.pi)
+        self.transition.update(dt)
         if self.state == STATE_MENU:
             self._update_menu(dt)
         elif self.state in (STATE_DIFFICULTY, STATE_MODE_SELECT):
@@ -537,5 +551,6 @@ class Game:
                                     cpu_mode=(self.opponent_type == OPPONENT_CPU))
             renderer.draw_particles(game_surf, self.particles.particles)
 
+        self.transition.draw(game_surf)
         self.screen.fill(BG_COLOR)
         self.screen.blit(game_surf, (int(offset.x), int(offset.y)))
