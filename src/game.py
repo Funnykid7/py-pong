@@ -41,6 +41,7 @@ class Game:
         self.shake = ScreenShake()
         self.particles = ParticleSystem()
         self.transition = TransitionManager()
+        self._quit_pending = False
 
         self.countdown = 0
         self.countdown_timer = 0.0
@@ -159,6 +160,8 @@ class Game:
                     if result == "quit":
                         running = False
             self._update(dt)
+            if self._quit_pending:
+                running = False
             self._draw()
             pygame.display.flip()
 
@@ -200,7 +203,7 @@ class Game:
                         self.state = STATE_DIFFICULTY
                     self.transition.start(_go_cpu)
                 else:
-                    return "quit"
+                    self.transition.start(lambda: setattr(self, "_quit_pending", True))
 
     def _handle_difficulty_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -264,7 +267,7 @@ class Game:
                 if self.pause_selected == 0:
                     self.state = STATE_PLAYING
                 else:
-                    self._reset_to_menu()
+                    self.transition.start(self._reset_to_menu)
 
     def _handle_gameover_event(self, event):
         if event.type == pygame.KEYDOWN:
