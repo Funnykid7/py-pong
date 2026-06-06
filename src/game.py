@@ -179,8 +179,10 @@ class Game:
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_UP, pygame.K_w):
                 self.menu_selected = (self.menu_selected - 1) % 3
+                self.menu_hover_t = 0.0
             elif event.key in (pygame.K_DOWN, pygame.K_s):
                 self.menu_selected = (self.menu_selected + 1) % 3
+                self.menu_hover_t = 0.0
             elif event.key == pygame.K_RETURN:
                 if self.menu_selected == 0:
                     self.opponent_type = OPPONENT_HUMAN
@@ -195,8 +197,10 @@ class Game:
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_UP, pygame.K_w):
                 self.difficulty_selected = (self.difficulty_selected - 1) % 4
+                self.menu_hover_t = 0.0
             elif event.key in (pygame.K_DOWN, pygame.K_s):
                 self.difficulty_selected = (self.difficulty_selected + 1) % 4
+                self.menu_hover_t = 0.0
             elif event.key == pygame.K_RETURN:
                 self.cpu_difficulty = DIFFICULTY_OPTIONS[self.difficulty_selected]
                 self.state = STATE_MODE_SELECT
@@ -207,8 +211,10 @@ class Game:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 self.mode_selected = (self.mode_selected - 1) % 3
+                self.menu_hover_t = 0.0
             elif event.key == pygame.K_DOWN:
                 self.mode_selected = (self.mode_selected + 1) % 3
+                self.menu_hover_t = 0.0
             elif event.key == pygame.K_RETURN:
                 modes = [MODE_FIRST_TO_11, MODE_BEST_OF_3, MODE_TIMED]
                 self.game_mode = modes[self.mode_selected]

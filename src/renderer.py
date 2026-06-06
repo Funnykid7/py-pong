@@ -180,9 +180,25 @@ def draw_menu(surface, font_title, font_large, font_small, selected: int,
     title = font_title.render("PY-PONG", True, P1_COLOR)
     surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 180))
     for i, opt in enumerate(["1 v 1", "1 v CPU", "QUIT"]):
-        color = ACCENT_COLOR if i == selected else WHITE
-        text = font_large.render(opt, True, color)
-        surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, 320 + i * 70))
+        y = 320 + i * 70
+        if i == selected:
+            t = 0.15 * (0.5 + 0.5 * math.sin(hover_t * 2))
+            color = (
+                int(ACCENT_COLOR[0] + (WHITE[0] - ACCENT_COLOR[0]) * t),
+                int(ACCENT_COLOR[1] + (WHITE[1] - ACCENT_COLOR[1]) * t),
+                int(ACCENT_COLOR[2] + (WHITE[2] - ACCENT_COLOR[2]) * t),
+            )
+            base_surf = font_large.render(opt, True, color)
+            w, h = base_surf.get_size()
+            scaled = pygame.transform.smoothscale(base_surf, (int(w * 1.08), int(h * 1.08)))
+            surface.blit(scaled, (SCREEN_W // 2 - scaled.get_width() // 2,
+                                  y - (scaled.get_height() - h) // 2))
+            bar_w = int(w + 8 * math.sin(hover_t * 3))
+            pygame.draw.rect(surface, color, (SCREEN_W // 2 - bar_w // 2, y + h + 6, bar_w, 2))
+        else:
+            dim = (int(WHITE[0] * 0.6), int(WHITE[1] * 0.6), int(WHITE[2] * 0.6))
+            text = font_large.render(opt, True, dim)
+            surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, y))
 
 
 def draw_mode_select(surface, font_large, font_small, selected: int,
@@ -200,9 +216,24 @@ def draw_mode_select(surface, font_large, font_small, selected: int,
     ]
     for i, (label, desc) in enumerate(modes):
         y = 280 + i * 110
-        color = ACCENT_COLOR if i == selected else WHITE
-        text = font_large.render(label, True, color)
-        surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, y))
+        if i == selected:
+            t = 0.15 * (0.5 + 0.5 * math.sin(hover_t * 2))
+            color = (
+                int(ACCENT_COLOR[0] + (WHITE[0] - ACCENT_COLOR[0]) * t),
+                int(ACCENT_COLOR[1] + (WHITE[1] - ACCENT_COLOR[1]) * t),
+                int(ACCENT_COLOR[2] + (WHITE[2] - ACCENT_COLOR[2]) * t),
+            )
+            base_surf = font_large.render(label, True, color)
+            w, h = base_surf.get_size()
+            scaled = pygame.transform.smoothscale(base_surf, (int(w * 1.08), int(h * 1.08)))
+            surface.blit(scaled, (SCREEN_W // 2 - scaled.get_width() // 2,
+                                  y - (scaled.get_height() - h) // 2))
+            bar_w = int(w + 8 * math.sin(hover_t * 3))
+            pygame.draw.rect(surface, color, (SCREEN_W // 2 - bar_w // 2, y + h + 6, bar_w, 2))
+        else:
+            dim = (int(WHITE[0] * 0.6), int(WHITE[1] * 0.6), int(WHITE[2] * 0.6))
+            text = font_large.render(label, True, dim)
+            surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, y))
         desc_text = font_small.render(desc, True, (120, 120, 140))
         surface.blit(desc_text, (SCREEN_W // 2 - desc_text.get_width() // 2, y + 44))
     if context_label:
@@ -219,9 +250,26 @@ def draw_difficulty_select(surface, font_large, font_small, selected: int,
     surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 160))
     for i, name in enumerate(DIFFICULTY_OPTIONS):
         y = 290 + i * 90
-        color = DIFFICULTY_COLORS[name] if i == selected else (100, 100, 120)
-        text = font_large.render(name, True, color)
-        surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, y))
+        if i == selected:
+            base_color = DIFFICULTY_COLORS[name]
+            t = 0.15 * (0.5 + 0.5 * math.sin(hover_t * 2))
+            color = (
+                int(base_color[0] + (WHITE[0] - base_color[0]) * t),
+                int(base_color[1] + (WHITE[1] - base_color[1]) * t),
+                int(base_color[2] + (WHITE[2] - base_color[2]) * t),
+            )
+            base_surf = font_large.render(name, True, color)
+            w, h = base_surf.get_size()
+            scaled = pygame.transform.smoothscale(base_surf, (int(w * 1.08), int(h * 1.08)))
+            surface.blit(scaled, (SCREEN_W // 2 - scaled.get_width() // 2,
+                                  y - (scaled.get_height() - h) // 2))
+            bar_w = int(w + 8 * math.sin(hover_t * 3))
+            pygame.draw.rect(surface, color, (SCREEN_W // 2 - bar_w // 2, y + h + 6, bar_w, 2))
+        else:
+            bc = DIFFICULTY_COLORS[name]
+            dim = (int(bc[0] * 0.6), int(bc[1] * 0.6), int(bc[2] * 0.6))
+            text = font_large.render(name, True, tuple(dim))
+            surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, y))
     hint = font_small.render("ESC  Back", True, (60, 60, 80))
     surface.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, SCREEN_H - 50))
 
