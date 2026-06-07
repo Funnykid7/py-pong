@@ -28,6 +28,7 @@ ENV/
 
 # Claude/Superpowers
 .superpowers/
+docs/superpowers/
 
 # Test artifacts
 .pytest_cache/
