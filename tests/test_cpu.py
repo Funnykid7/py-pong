@@ -83,3 +83,87 @@ def test_insane_reacts_instantly():
     cpu = CPUController("INSANE")  # reaction_delay = 0.0
     cpu.update(0.016, ball, paddle)
     assert cpu._target_y == ball.pos.y
+
+
+def _make_player_paddle():
+    return Paddle(PADDLE_MARGIN + PADDLE_W // 2, 1)
+
+
+def _make_ball_incoming():
+    """Ball moving right — toward CPU (P2 on the right)."""
+    b = Ball()
+    b.vel.x = 400
+    return b
+
+
+def _make_ball_retreating():
+    """Ball moving left — away from CPU."""
+    b = Ball()
+    b.vel.x = -400
+    return b
+
+
+def test_smash_disabled_for_easy():
+    cpu = CPUController("EASY")
+    assert cpu.smash_enabled is False
+
+
+def test_smash_disabled_for_medium():
+    cpu = CPUController("MEDIUM")
+    assert cpu.smash_enabled is False
+
+
+def test_smash_enabled_for_hard():
+    cpu = CPUController("HARD")
+    assert cpu.smash_enabled is True
+
+
+def test_smash_enabled_for_insane():
+    cpu = CPUController("INSANE")
+    assert cpu.smash_enabled is True
+
+
+def test_should_smash_returns_false_when_meter_not_ready():
+    cpu = CPUController("HARD")
+    ball = _make_ball_incoming()
+    player = _make_player_paddle()
+    assert cpu.should_smash(ball, player, meter_ready=False) is False
+
+
+def test_should_smash_returns_false_for_disabled_difficulty():
+    cpu = CPUController("EASY")
+    ball = _make_ball_incoming()
+    player = _make_player_paddle()
+    assert cpu.should_smash(ball, player, meter_ready=True) is False
+
+
+def test_hard_fires_immediately_when_ready():
+    cpu = CPUController("HARD")
+    ball = _make_ball_retreating()   # direction does not matter for HARD
+    player = _make_player_paddle()
+    player.pos.y = CENTER_Y          # player perfectly centered — still fires
+    assert cpu.should_smash(ball, player, meter_ready=True) is True
+
+
+def test_insane_fires_when_ball_incoming_and_player_off_center():
+    cpu = CPUController("INSANE")
+    ball = _make_ball_incoming()
+    player = _make_player_paddle()
+    player.pos.y = CENTER_Y + 120    # well off-center (>80 px)
+    assert cpu.should_smash(ball, player, meter_ready=True) is True
+
+
+def test_insane_withholds_when_ball_moving_away():
+    cpu = CPUController("INSANE")
+    ball = _make_ball_retreating()
+    player = _make_player_paddle()
+    player.pos.y = CENTER_Y + 120    # off-center but ball retreating
+    assert cpu.should_smash(ball, player, meter_ready=True) is False
+
+
+def test_insane_withholds_when_player_is_centered():
+    cpu = CPUController("INSANE")
+    ball = _make_ball_incoming()
+    player = _make_player_paddle()
+    player.pos.y = CENTER_Y + 20     # within 80 px — considered centered
+    assert cpu.should_smash(ball, player, meter_ready=True) is False

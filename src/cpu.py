@@ -11,6 +11,8 @@ class CPUController:
         self.dead_zone: float = params["dead_zone"]
         self._reaction_timer: float = self.reaction_delay
         self._target_y: float = (SCREEN_H + HUD_HEIGHT) / 2.0
+        self.smash_enabled: bool = difficulty in ("HARD", "INSANE")
+        self._insane_strategic: bool = difficulty == "INSANE"
 
     def update(self, dt: float, ball: Ball, paddle: Paddle) -> None:
         center_y = (SCREEN_H + HUD_HEIGHT) / 2.0
@@ -30,3 +32,13 @@ class CPUController:
             paddle.vel.y = -self.max_speed
         else:
             paddle.vel.y = self.max_speed
+
+    def should_smash(self, ball: Ball, player_paddle: Paddle, meter_ready: bool) -> bool:
+        if not self.smash_enabled or not meter_ready:
+            return False
+        if not self._insane_strategic:
+            return True  # HARD: fire the moment meter is full
+        # INSANE: ball heading toward CPU and player visibly off-center
+        field_center_y = (SCREEN_H + HUD_HEIGHT) / 2.0
+        player_off_center = abs(player_paddle.pos.y - field_center_y) > 80
+        return ball.vel.x > 0 and player_off_center
