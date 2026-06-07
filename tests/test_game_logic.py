@@ -214,3 +214,59 @@ def test_smash_meters_reset_on_set_win():
     assert g.p2_smash_ready is False
 
 
+from src.cpu import CPUController
+from src.constants import OPPONENT_CPU, SMASH_BASE_CHARGE_RATE
+
+
+def _make_cpu_game(difficulty):
+    g = make_game()
+    g.opponent_type = OPPONENT_CPU
+    g.cpu_difficulty = difficulty
+    g.cpu = CPUController(difficulty)
+    return g
+
+
+def test_cpu_p2_meter_does_not_charge_on_easy():
+    g = _make_cpu_game("EASY")
+    g._update_smash_meters(5.0)
+    assert g.p2_smash_meter == 0.0
+
+
+def test_cpu_p2_meter_does_not_charge_on_medium():
+    g = _make_cpu_game("MEDIUM")
+    g._update_smash_meters(5.0)
+    assert g.p2_smash_meter == 0.0
+
+
+def test_cpu_p2_meter_charges_on_hard():
+    g = _make_cpu_game("HARD")
+    g._update_smash_meters(1.0)
+    assert g.p2_smash_meter > 0.0
+
+
+def test_cpu_p2_meter_charges_on_insane():
+    g = _make_cpu_game("INSANE")
+    g._update_smash_meters(1.0)
+    assert g.p2_smash_meter > 0.0
+
+
+def test_hard_cpu_fires_smash_in_update_playing():
+    """_update_playing calls _activate_smash(2) when HARD CPU meter is ready."""
+    g = _make_cpu_game("HARD")
+    g.p2_smash_meter = 1.0
+    g.p2_smash_ready = True
+    g._update_playing(0.016)
+    assert g.p2_smash_meter == 0.0
+    assert g.p2_smash_ready is False
+
+
+def test_insane_cpu_withholds_smash_when_ball_moving_away():
+    """INSANE CPU does not fire when ball.vel.x < 0, even with meter ready."""
+    g = _make_cpu_game("INSANE")
+    g.p2_smash_meter = 1.0
+    g.p2_smash_ready = True
+    g.balls[0].vel.x = -400  # ball moving away from CPU
+    g._update_playing(0.016)
+    assert g.p2_smash_ready is True  # meter was NOT consumed
+
+

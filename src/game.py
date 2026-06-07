@@ -125,7 +125,7 @@ class Game:
         if self.p1_smash_meter >= 1.0:
             self.p1_smash_ready = True
 
-        if self.opponent_type != OPPONENT_CPU:
+        if self.opponent_type != OPPONENT_CPU or (self.cpu and self.cpu.smash_enabled):
             p2_gap = max(0, self.p1.score - self.p2.score)
             self.p2_smash_meter = min(1.0, self.p2_smash_meter + (SMASH_BASE_CHARGE_RATE + p2_gap * SMASH_PER_POINT_CHARGE) * dt)
             if self.p2_smash_meter >= 1.0:
@@ -393,6 +393,8 @@ class Game:
 
         self._handle_collisions()
         self._update_smash_meters(dt)
+        if self.cpu is not None and self.cpu.should_smash(self.balls[0], self.p1, self.p2_smash_ready):
+            self._activate_smash(2)
         self.smash_pulse_t += dt
         self.shake.update(dt)
         self.particles.update(dt)
@@ -535,13 +537,16 @@ class Game:
             renderer.draw_paddle(game_surf, self.p2)
             renderer.draw_particles(game_surf, self.particles.particles)
             is_cpu = self.opponent_type == OPPONENT_CPU
+            cpu_smash_on = is_cpu and self.cpu is not None and self.cpu.smash_enabled
+            p2_smash_val = self.p2_smash_meter if (not is_cpu or cpu_smash_on) else 0.0
+            p2_ready_val = self.p2_smash_ready if (not is_cpu or cpu_smash_on) else False
             renderer.draw_hud(
                 game_surf, self.p1, self.p2, self.font_large, self.font_small,
                 self.game_mode,
                 self.time_left if self.game_mode == MODE_TIMED else None,
                 (self.p1.sets_won, self.p2.sets_won) if self.game_mode == MODE_BEST_OF_3 else None,
-                self.p1_smash_meter, 0.0 if is_cpu else self.p2_smash_meter,
-                self.p1_smash_ready, False if is_cpu else self.p2_smash_ready,
+                self.p1_smash_meter, p2_smash_val,
+                self.p1_smash_ready, p2_ready_val,
                 self.smash_pulse_t,
                 cpu_mode=is_cpu,
             )
