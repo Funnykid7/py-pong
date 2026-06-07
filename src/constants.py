@@ -81,3 +81,16 @@ CPU_PARAMS = {
     "HARD":   {"max_speed": 480, "reaction_delay": 0.06, "dead_zone": 10},
     "INSANE": {"max_speed": 650, "reaction_delay": 0.00, "dead_zone":  5},
 }
+
+# Tournament
+STATE_TOURNAMENT_SETUP = "tournament_setup"
+STATE_BRACKET = "bracket"
+
+# Each entry: (display_label, is_cpu, difficulty)
+TOURNAMENT_SLOT_TYPES = [
+    ("HUMAN",       False, "EASY"),
+    ("CPU-EASY",    True,  "EASY"),
+    ("CPU-MEDIUM",  True,  "MEDIUM"),
+    ("CPU-HARD",    True,  "HARD"),
+    ("CPU-INSANE",  True,  "INSANE"),
+]
