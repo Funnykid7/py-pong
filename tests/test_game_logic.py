@@ -5,6 +5,7 @@ from src.constants import (
     CLASSIC_WIN_SCORE, SET_WIN_SCORE,
     SUDDEN_DEATH_DURATION,
     STATE_PLAYING, STATE_GAME_OVER,
+    OPPONENT_HUMAN,
 )
 from src.game import Game
 
@@ -270,3 +271,81 @@ def test_insane_cpu_withholds_smash_when_ball_moving_away():
     assert g.p2_smash_ready is True  # meter was NOT consumed
 
 
+# ── Tournament integration ────────────────────────────────────────────────────
+
+from src.tournament import TournamentManager, Slot as TSlot
+from src.constants import STATE_BRACKET
+
+
+def _make_4p_tournament():
+    slots = [
+        TSlot("P1", False, "EASY"), TSlot("P2", False, "EASY"),
+        TSlot("P3", False, "EASY"), TSlot("P4", False, "EASY"),
+    ]
+    return TournamentManager(slots)
+
+
+def test_end_match_transitions_to_bracket_when_tournament_active():
+    g = make_game()
+    g.tournament = _make_4p_tournament()
+    g._tournament_match_slots = (0, 1)
+    g._end_match(winner=1)
+    assert g.state == STATE_BRACKET
+
+
+def test_end_match_records_correct_winner_slot_player1():
+    g = make_game()
+    g.tournament = _make_4p_tournament()
+    g._tournament_match_slots = (0, 1)
+    g._end_match(winner=1)         # game player 1 → slot index 0
+    assert g.tournament.rounds[0][0].winner == 0
+
+
+def test_end_match_records_correct_winner_slot_player2():
+    g = make_game()
+    g.tournament = _make_4p_tournament()
+    g._tournament_match_slots = (0, 1)
+    g._end_match(winner=2)         # game player 2 → slot index 1
+    assert g.tournament.rounds[0][0].winner == 1
+
+
+def test_end_match_without_tournament_goes_to_game_over():
+    g = make_game()
+    g.tournament = None
+    g._end_match(winner=1)
+    assert g.state == STATE_GAME_OVER
+
+
+def test_setup_tournament_match_human_vs_human():
+    g = make_game()
+    g.tournament = _make_4p_tournament()
+    g._setup_tournament_match()
+    assert g.opponent_type == OPPONENT_HUMAN
+    assert g._tournament_match_slots == (0, 1)
+
+
+def test_setup_tournament_match_cpu_slot_b():
+    from src.constants import OPPONENT_CPU
+    slots = [
+        TSlot("P1", False, "EASY"), TSlot("CPU-HARD", True, "HARD"),
+        TSlot("P2", False, "EASY"), TSlot("P3", False, "EASY"),
+    ]
+    g = make_game()
+    g.tournament = TournamentManager(slots)
+    g._setup_tournament_match()    # match is slot 0 (human) vs slot 1 (CPU)
+    assert g.opponent_type == OPPONENT_CPU
+    assert g.cpu_difficulty == "HARD"
+    assert g._tournament_match_slots == (0, 1)
+
+
+def test_setup_tournament_match_cpu_slot_a_swaps_to_right():
+    from src.constants import OPPONENT_CPU
+    slots = [
+        TSlot("CPU-EASY", True, "EASY"), TSlot("P1", False, "EASY"),
+        TSlot("P2", False, "EASY"), TSlot("P3", False, "EASY"),
+    ]
+    g = make_game()
+    g.tournament = TournamentManager(slots)
+    g._setup_tournament_match()    # match is slot 0 (CPU) vs slot 1 (human) → must swap
+    assert g.opponent_type == OPPONENT_CPU
+    assert g._tournament_match_slots == (1, 0)  # human is now slot_a (left)

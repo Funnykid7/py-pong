@@ -600,6 +600,14 @@ class Game:
                 winner = 2
             else:
                 winner = 1
+
+        if self.tournament is not None:
+            winner_slot = self._tournament_match_slots[winner - 1]
+            self.tournament.record_result(winner_slot)
+            self._bg_channel.fadeout(500)
+            self.state = STATE_BRACKET
+            return
+
         self.winner = winner
         self._bg_channel.fadeout(500)
         if self.opponent_type == OPPONENT_CPU and winner == 2:
