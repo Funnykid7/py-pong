@@ -604,7 +604,7 @@ class Game:
         if self.tournament is not None:
             winner_slot = self._tournament_match_slots[winner - 1]
             self.tournament.record_result(winner_slot)
-            self._bg_channel.fadeout(500)
+            self._bg_channel.fadeout(500)  # mirrors fadeout in non-tournament path below
             self.state = STATE_BRACKET
             return
 

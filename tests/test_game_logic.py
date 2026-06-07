@@ -291,6 +291,7 @@ def test_end_match_transitions_to_bracket_when_tournament_active():
     g._tournament_match_slots = (0, 1)
     g._end_match(winner=1)
     assert g.state == STATE_BRACKET
+    assert g.tournament.rounds[0][0].winner == 0
 
 
 def test_end_match_records_correct_winner_slot_player1():
