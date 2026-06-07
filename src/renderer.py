@@ -94,8 +94,9 @@ def draw_hud(surface, p1, p2, font_large, font_small,
     if p2.active_powerup:
         _draw_powerup_hud(surface, p2, font_small, 7 * SCREEN_W // 8, P2_COLOR)
     else:
+        p2_shift = "" if cpu_mode else "[RSHIFT]"
         _draw_smash_meter(surface, 7 * SCREEN_W // 8, p2_smash, p2_ready, smash_pulse_t,
-                          P2_COLOR, "[RSHIFT]", font_small)
+                          P2_COLOR, p2_shift, font_small)
 
     hint_text = "W/S" if cpu_mode else "W/S                    ↑/↓"
     hint = font_small.render(hint_text, True, (60, 60, 80))
@@ -113,7 +114,7 @@ def _draw_smash_meter(surface, cx: int, meter: float, ready: bool, pulse_t: floa
         pulse_surf = pygame.Surface((bar_w, 6), pygame.SRCALPHA)
         pygame.draw.rect(pulse_surf, (*ACCENT_COLOR, pulse_alpha), pulse_surf.get_rect(), border_radius=3)
         surface.blit(pulse_surf, (bar_x, bar_y))
-        label_txt = font_small.render(f"READY! {shift_label}", True, ACCENT_COLOR)
+        label_txt = font_small.render(f"READY! {shift_label}".strip(), True, ACCENT_COLOR)
     else:
         fill_w = int(bar_w * meter)
         if fill_w > 0:
