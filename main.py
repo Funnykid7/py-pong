@@ -7,7 +7,7 @@ def main():
     pygame.init()
     pygame.mixer.init()
     screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
-    pygame.display.set_caption("py-pong")
+    pygame.display.set_caption("py-pong by aryan")
     game = Game(screen)
     game.run()
     pygame.quit()
