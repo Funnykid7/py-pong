@@ -392,7 +392,7 @@ def draw_bracket(surface, tournament, font_large, font_small):
 
     n_slots = tournament.size
     n_rounds = len(tournament.rounds)
-    TOP, BOTTOM = 110, 640
+    TOP, BOTTOM = 110, 640   # bracket area: clears title bar above, prompt below
     SLOT_W, SLOT_H = 120, 28
     available_h = BOTTOM - TOP
 
@@ -478,7 +478,7 @@ def draw_bracket(surface, tournament, font_large, font_small):
 
     # Bottom prompt
     if tournament.is_complete():
-        prompt = "ENTER  Return to menu    ESC  Return to menu"
+        prompt = "ENTER / ESC  Return to menu"
     else:
         prompt = "ENTER  Start next match    ESC  Quit tournament"
     p_txt = font_small.render(prompt, True, (90, 90, 110))
