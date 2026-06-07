@@ -10,10 +10,12 @@ from src.constants import (
     MATCH_WIN_SETS, CLASSIC_WIN_SCORE,
     STATE_MENU, STATE_MODE_SELECT, STATE_PLAYING,
     STATE_PAUSED, STATE_GAME_OVER, STATE_DIFFICULTY,
+    STATE_TOURNAMENT_SETUP, STATE_BRACKET,
     OPPONENT_HUMAN, OPPONENT_CPU, DIFFICULTY_OPTIONS,
     SHAKE_HIT_TRAUMA, SHAKE_SCORE_TRAUMA,
     P1_COLOR, P2_COLOR,
     SMASH_BASE_CHARGE_RATE, SMASH_PER_POINT_CHARGE,
+    TOURNAMENT_SLOT_TYPES,
 )
 from src.entities import Paddle, Ball
 from src.effects import ScreenShake, ParticleSystem, TransitionManager
@@ -72,6 +74,13 @@ class Game:
         self.cpu_difficulty: str = "MEDIUM"
         self.difficulty_selected: int = 1  # default highlight on MEDIUM
         self.cpu: CPUController | None = None
+
+        # Tournament
+        self.tournament: "TournamentManager | None" = None
+        self._tournament_match_slots: tuple[int, int] = (0, 1)
+        self._ts_size: int = 4
+        self._ts_slots: list[int] = [0, 0, 2, 2]
+        self._ts_row: int = 0
 
         self._init_audio()
         self._start_menu_music()
@@ -167,13 +176,18 @@ class Game:
 
     def _handle_event(self, event):
         if self.transition.blocking and self.state in (
-            STATE_MENU, STATE_DIFFICULTY, STATE_MODE_SELECT, STATE_GAME_OVER
+            STATE_MENU, STATE_DIFFICULTY, STATE_MODE_SELECT, STATE_GAME_OVER,
+            STATE_TOURNAMENT_SETUP, STATE_BRACKET,
         ):
             return
         if self.state == STATE_MENU:
             return self._handle_menu_event(event)
         elif self.state == STATE_DIFFICULTY:
             return self._handle_difficulty_event(event)
+        elif self.state == STATE_TOURNAMENT_SETUP:
+            return self._handle_tournament_setup_event(event)
+        elif self.state == STATE_BRACKET:
+            return self._handle_bracket_event(event)
         elif self.state == STATE_MODE_SELECT:
             return self._handle_mode_select_event(event)
         elif self.state == STATE_PLAYING:
@@ -186,10 +200,10 @@ class Game:
     def _handle_menu_event(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_UP, pygame.K_w):
-                self.menu_selected = (self.menu_selected - 1) % 3
+                self.menu_selected = (self.menu_selected - 1) % 4
                 self.menu_hover_t = 0.0
             elif event.key in (pygame.K_DOWN, pygame.K_s):
-                self.menu_selected = (self.menu_selected + 1) % 3
+                self.menu_selected = (self.menu_selected + 1) % 4
                 self.menu_hover_t = 0.0
             elif event.key == pygame.K_RETURN:
                 if self.menu_selected == 0:
@@ -202,6 +216,13 @@ class Game:
                         self.opponent_type = OPPONENT_CPU
                         self.state = STATE_DIFFICULTY
                     self.transition.start(_go_cpu)
+                elif self.menu_selected == 2:
+                    def _go_tournament():
+                        self._ts_size = 4
+                        self._ts_slots = [0, 0, 2, 2]
+                        self._ts_row = 0
+                        self.state = STATE_TOURNAMENT_SETUP
+                    self.transition.start(_go_tournament)
                 else:
                     self.transition.start(lambda: setattr(self, "_quit_pending", True))
 
@@ -222,6 +243,51 @@ class Game:
             elif event.key == pygame.K_ESCAPE:
                 self.menu_hover_t = 0.0
                 self.transition.start(lambda: setattr(self, "state", STATE_MENU))
+
+    def _handle_tournament_setup_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            n = self._ts_size
+            if event.key in (pygame.K_UP, pygame.K_w):
+                self._ts_row = (self._ts_row - 1) % n
+            elif event.key in (pygame.K_DOWN, pygame.K_s):
+                self._ts_row = (self._ts_row + 1) % n
+            elif event.key == pygame.K_LEFT:
+                self._ts_slots[self._ts_row] = (
+                    self._ts_slots[self._ts_row] - 1) % len(TOURNAMENT_SLOT_TYPES)
+            elif event.key == pygame.K_RIGHT:
+                self._ts_slots[self._ts_row] = (
+                    self._ts_slots[self._ts_row] + 1) % len(TOURNAMENT_SLOT_TYPES)
+            elif event.key == pygame.K_TAB:
+                if self._ts_size == 4:
+                    self._ts_size = 8
+                    self._ts_slots.extend([2, 2, 2, 2])
+                else:
+                    self._ts_size = 4
+                    self._ts_slots = self._ts_slots[:4]
+                self._ts_row = min(self._ts_row, self._ts_size - 1)
+            elif event.key == pygame.K_RETURN:
+                self.transition.start(self._start_tournament)
+            elif event.key == pygame.K_ESCAPE:
+                self.menu_hover_t = 0.0
+                self.transition.start(lambda: setattr(self, "state", STATE_MENU))
+
+    def _start_tournament(self):
+        from src.tournament import TournamentManager, Slot
+        human_count = 0
+        slots: list[Slot] = []
+        for i, type_idx in enumerate(self._ts_slots[:self._ts_size]):
+            _label, is_cpu, difficulty = TOURNAMENT_SLOT_TYPES[type_idx]
+            if not is_cpu:
+                human_count += 1
+                label = f"P{human_count}"
+            else:
+                label = f"CPU-{difficulty}"
+            slots.append(Slot(label=label, is_cpu=is_cpu, difficulty=difficulty))
+        self.tournament = TournamentManager(slots)
+        self.state = STATE_BRACKET
+
+    def _handle_bracket_event(self, event):
+        pass  # implemented in Task 4
 
     def _handle_mode_select_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -327,6 +393,8 @@ class Game:
         if self.state == STATE_MENU:
             self._update_menu(dt)
         elif self.state in (STATE_DIFFICULTY, STATE_MODE_SELECT):
+            self._update_menu_particles(dt)
+        elif self.state in (STATE_TOURNAMENT_SETUP, STATE_BRACKET):
             self._update_menu_particles(dt)
         elif self.state == STATE_PLAYING:
             self._update_playing(dt)
@@ -554,6 +622,16 @@ class Game:
                 renderer.draw_countdown(game_surf, self.countdown, self.font_title)
             if self.state == STATE_PAUSED:
                 renderer.draw_pause(game_surf, self.font_large, self.pause_selected)
+        elif self.state == STATE_TOURNAMENT_SETUP:
+            renderer.draw_tournament_setup(
+                game_surf, self.font_large, self.font_small,
+                self._ts_size, self._ts_slots, self._ts_row,
+                self.menu_particles, self.menu_hover_t,
+            )
+        elif self.state == STATE_BRACKET:
+            renderer.draw_bracket(
+                game_surf, self.tournament, self.font_large, self.font_small,
+            )
         elif self.state == STATE_GAME_OVER:
             renderer.draw_game_over(game_surf, self.winner, self.p1, self.p2,
                                     self.font_title, self.font_large,

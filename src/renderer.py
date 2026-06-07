@@ -179,9 +179,9 @@ def draw_menu(surface, font_title, font_large, font_small, selected: int,
         _draw_menu_particles(surface, menu_particles, hover_t)
     draw_glow(surface, ACCENT_COLOR, (int(anim_ball_pos[0]), int(anim_ball_pos[1])), BALL_SIZE // 2)
     title = font_title.render("PY-PONG", True, P1_COLOR)
-    surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 180))
-    for i, opt in enumerate(["1 v 1", "1 v CPU", "QUIT"]):
-        y = 320 + i * 70
+    surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 140))
+    for i, opt in enumerate(["1 v 1", "1 v CPU", "TOURNAMENT", "QUIT"]):
+        y = 285 + i * 75
         if i == selected:
             t = 0.15 * (0.5 + 0.5 * math.sin(hover_t * 2))
             color = (
@@ -302,3 +302,66 @@ def draw_game_over(surface, winner: int, p1, p2, font_title, font_large, selecte
         c = ACCENT_COLOR if i == selected else WHITE
         text = font_large.render(opt, True, c)
         surface.blit(text, (SCREEN_W // 2 - text.get_width() // 2, 420 + i * 70))
+
+
+def draw_tournament_setup(surface, font_large, font_small, size: int,
+                          slot_type_indices: list, selected_row: int,
+                          menu_particles: list | None, hover_t: float):
+    from src.constants import TOURNAMENT_SLOT_TYPES, DIFFICULTY_COLORS
+    draw_background(surface)
+    if menu_particles is not None:
+        _draw_menu_particles(surface, menu_particles, hover_t)
+
+    title = font_large.render("TOURNAMENT SETUP", True, WHITE)
+    surface.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 100))
+
+    # Size toggle
+    size_lbl = font_small.render("PLAYERS:", True, (120, 120, 140))
+    surface.blit(size_lbl, (SCREEN_W // 2 - 110, 170))
+    for idx, n in enumerate([4, 8]):
+        is_active = (n == size)
+        col = ACCENT_COLOR if is_active else (60, 60, 80)
+        box = pygame.Rect(SCREEN_W // 2 + idx * 58 - 10, 165, 46, 26)
+        pygame.draw.rect(surface, (15, 15, 25), box, border_radius=4)
+        pygame.draw.rect(surface, col, box, width=2, border_radius=4)
+        t = font_small.render(str(n), True, col)
+        surface.blit(t, (box.centerx - t.get_width() // 2, box.centery - t.get_height() // 2))
+    tab_hint = font_small.render("TAB to toggle", True, (50, 50, 70))
+    surface.blit(tab_hint, (SCREEN_W // 2 + 120, 170))
+
+    # Slot rows
+    row_h = 44
+    y0 = 220
+    for i in range(size):
+        y = y0 + i * row_h
+        is_sel = (i == selected_row)
+        type_idx = slot_type_indices[i]
+        type_label, is_cpu, difficulty = TOURNAMENT_SLOT_TYPES[type_idx]
+        slot_col = DIFFICULTY_COLORS[difficulty] if is_cpu else P1_COLOR
+        border_col = ACCENT_COLOR if is_sel else (55, 55, 70)
+
+        row_lbl = font_small.render(f"P{i + 1}", True, (90, 90, 110))
+        surface.blit(row_lbl, (SCREEN_W // 2 - 175, y + 6))
+
+        box = pygame.Rect(SCREEN_W // 2 - 140, y, 280, 30)
+        pygame.draw.rect(surface, (12, 12, 20), box, border_radius=4)
+        pygame.draw.rect(surface, border_col, box, width=2, border_radius=4)
+
+        inner_col = slot_col if is_sel else (70, 70, 90)
+        arrows = "◀  " if is_sel else "   "
+        arrows_r = "  ▶" if is_sel else "   "
+        txt = font_small.render(f"{arrows}{type_label}{arrows_r}", True, inner_col)
+        surface.blit(txt, (box.centerx - txt.get_width() // 2,
+                           box.centery - txt.get_height() // 2))
+
+    start_y = y0 + size * row_h + 16
+    start_txt = font_small.render("START TOURNAMENT  [ENTER]", True, (110, 110, 130))
+    surface.blit(start_txt, (SCREEN_W // 2 - start_txt.get_width() // 2, start_y))
+    esc_txt = font_small.render("ESC  Back", True, (55, 55, 75))
+    surface.blit(esc_txt, (SCREEN_W // 2 - esc_txt.get_width() // 2, SCREEN_H - 36))
+
+
+def draw_bracket(surface, tournament, font_large, font_small):
+    draw_background(surface)
+    txt = font_small.render("BRACKET — coming soon", True, (120, 120, 140))
+    surface.blit(txt, (SCREEN_W // 2 - txt.get_width() // 2, SCREEN_H // 2))
