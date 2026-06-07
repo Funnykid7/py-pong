@@ -636,7 +636,18 @@ class Game:
                                             self.difficulty_selected,
                                             self.menu_particles, self.menu_hover_t)
         elif self.state == STATE_MODE_SELECT:
-            context = f"1vCPU · {self.cpu_difficulty}" if self.opponent_type == OPPONENT_CPU else None
+            if self.tournament is not None:
+                m = self.tournament.next_match()
+                if m is not None:
+                    sa = self.tournament.slots[m.slot_a].label
+                    sb = self.tournament.slots[m.slot_b].label
+                    context = f"TOURNAMENT · {sa} vs {sb}"
+                else:
+                    context = "TOURNAMENT"
+            elif self.opponent_type == OPPONENT_CPU:
+                context = f"1vCPU · {self.cpu_difficulty}"
+            else:
+                context = None
             renderer.draw_mode_select(game_surf, self.font_large, self.font_small,
                                       self.mode_selected, context,
                                       self.menu_particles, self.menu_hover_t)
