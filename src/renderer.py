@@ -7,6 +7,7 @@ from src.constants import (
     PADDLE_H, POWERUP_DURATION,
     MODE_TIMED, MODE_BEST_OF_3,
     DIFFICULTY_OPTIONS, DIFFICULTY_COLORS,
+    TOURNAMENT_SLOT_TYPES,
 )
 
 
@@ -307,7 +308,6 @@ def draw_game_over(surface, winner: int, p1, p2, font_title, font_large, selecte
 def draw_tournament_setup(surface, font_large, font_small, size: int,
                           slot_type_indices: list, selected_row: int,
                           menu_particles: list | None, hover_t: float):
-    from src.constants import TOURNAMENT_SLOT_TYPES, DIFFICULTY_COLORS
     draw_background(surface)
     if menu_particles is not None:
         _draw_menu_particles(surface, menu_particles, hover_t)

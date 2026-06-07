@@ -77,7 +77,7 @@ class Game:
 
         # Tournament
         self.tournament: "TournamentManager | None" = None
-        self._tournament_match_slots: tuple[int, int] = (0, 1)
+        self._tournament_match_slots: tuple[int, int] = (0, 1)  # set by _setup_tournament_match; used in _end_match
         self._ts_size: int = 4
         self._ts_slots: list[int] = [0, 0, 2, 2]
         self._ts_row: int = 0
