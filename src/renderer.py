@@ -361,7 +361,125 @@ def draw_tournament_setup(surface, font_large, font_small, size: int,
     surface.blit(esc_txt, (SCREEN_W // 2 - esc_txt.get_width() // 2, SCREEN_H - 36))
 
 
+def _slot_color(slot) -> tuple:
+    if not slot.is_cpu:
+        return P1_COLOR
+    return DIFFICULTY_COLORS[slot.difficulty]
+
+
+def _is_eliminated(tournament, slot_idx: int) -> bool:
+    for round_matches in tournament.rounds:
+        for m in round_matches:
+            if m.winner is not None:
+                if (m.slot_a == slot_idx or m.slot_b == slot_idx) and m.winner != slot_idx:
+                    return True
+    return False
+
+
+def _draw_bracket_box(surface, label: str, x: int, cy: int, w: int, h: int,
+                      font, color: tuple, highlight: bool):
+    rect = pygame.Rect(x, cy - h // 2, w, h)
+    border_color = ACCENT_COLOR if highlight else color
+    pygame.draw.rect(surface, (12, 12, 20), rect, border_radius=3)
+    pygame.draw.rect(surface, border_color, rect, width=2, border_radius=3)
+    txt = font.render(label, True, border_color)
+    surface.blit(txt, (rect.centerx - txt.get_width() // 2,
+                       rect.centery - txt.get_height() // 2))
+
+
 def draw_bracket(surface, tournament, font_large, font_small):
     draw_background(surface)
-    txt = font_small.render("BRACKET — coming soon", True, (120, 120, 140))
-    surface.blit(txt, (SCREEN_W // 2 - txt.get_width() // 2, SCREEN_H // 2))
+
+    n_slots = tournament.size
+    n_rounds = len(tournament.rounds)
+    TOP, BOTTOM = 110, 640
+    SLOT_W, SLOT_H = 120, 28
+    available_h = BOTTOM - TOP
+
+    col_width = (SCREEN_W - 160 - SLOT_W) // n_rounds
+    col_xs = [80 + i * col_width for i in range(n_rounds + 1)]
+
+    slot_ys = [TOP + (i + 0.5) * available_h / n_slots for i in range(n_slots)]
+
+    # Compute Y-center of each match for every round
+    match_cy: list[list[float]] = []
+    for r in range(n_rounds):
+        if r == 0:
+            n_m = len(tournament.rounds[0])
+            match_cy.append([(slot_ys[m * 2] + slot_ys[m * 2 + 1]) / 2 for m in range(n_m)])
+        else:
+            prev = match_cy[r - 1]
+            n_m = len(tournament.rounds[r])
+            match_cy.append([(prev[m * 2] + prev[m * 2 + 1]) / 2 for m in range(n_m)])
+
+    next_match = tournament.next_match()
+
+    # Draw initial slot boxes
+    for i, sy in enumerate(slot_ys):
+        slot = tournament.slots[i]
+        eliminated = _is_eliminated(tournament, i)
+        color = _slot_color(slot)
+        if eliminated:
+            color = tuple(max(0, c // 4) for c in color)
+        is_in_next = (
+            next_match is not None
+            and tournament.round_idx == 0
+            and tournament.match_idx < len(tournament.rounds[0])
+            and (tournament.rounds[0][tournament.match_idx].slot_a == i
+                 or tournament.rounds[0][tournament.match_idx].slot_b == i)
+        )
+        _draw_bracket_box(surface, slot.label, col_xs[0], int(sy),
+                          SLOT_W, SLOT_H, font_small, color, highlight=is_in_next)
+
+    # Draw connector lines and winner/champion boxes for each round
+    for r, round_matches in enumerate(tournament.rounds):
+        x_in = col_xs[r]
+        x_out = col_xs[r + 1]
+
+        for m_idx, match in enumerate(round_matches):
+            cy = int(match_cy[r][m_idx])
+            ya = int(slot_ys[m_idx * 2] if r == 0 else match_cy[r - 1][m_idx * 2])
+            yb = int(slot_ys[m_idx * 2 + 1] if r == 0 else match_cy[r - 1][m_idx * 2 + 1])
+
+            mid_x = x_in + SLOT_W + (x_out - x_in - SLOT_W) // 2
+            line_col = (55, 55, 75)
+            pygame.draw.line(surface, line_col, (x_in + SLOT_W, ya), (mid_x, ya), 1)
+            pygame.draw.line(surface, line_col, (x_in + SLOT_W, yb), (mid_x, yb), 1)
+            pygame.draw.line(surface, line_col, (mid_x, ya), (mid_x, yb), 1)
+            pygame.draw.line(surface, line_col, (mid_x, cy), (x_out, cy), 1)
+
+            is_final_round = (r == n_rounds - 1)
+            is_next = (r == tournament.round_idx and m_idx == tournament.match_idx
+                       and not tournament.is_complete())
+
+            if is_final_round and tournament.is_complete():
+                champion = tournament.champion()
+                _draw_bracket_box(surface, champion.label, x_out, cy,
+                                  SLOT_W, SLOT_H, font_small, _slot_color(champion), highlight=True)
+                crown = font_small.render("CHAMPION", True, ACCENT_COLOR)
+                surface.blit(crown, (x_out + SLOT_W // 2 - crown.get_width() // 2, cy - SLOT_H - 6))
+            elif match.winner is not None:
+                w_slot = tournament.slots[match.winner]
+                _draw_bracket_box(surface, w_slot.label, x_out, cy,
+                                  SLOT_W, SLOT_H, font_small, _slot_color(w_slot), highlight=False)
+            elif is_next:
+                _draw_bracket_box(surface, "NEXT ▶", x_out, cy,
+                                  SLOT_W, SLOT_H, font_small, ACCENT_COLOR, highlight=True)
+            else:
+                _draw_bracket_box(surface, "?", x_out, cy,
+                                  SLOT_W, SLOT_H, font_small, (50, 50, 70), highlight=False)
+
+    # Round labels
+    round_labels = (["SEMI-FINALS", "FINAL"] if n_rounds == 2
+                    else ["QUARTER-FINALS", "SEMI-FINALS", "FINAL"])
+    for r, label in enumerate(round_labels):
+        txt = font_small.render(label, True, (65, 65, 85))
+        surface.blit(txt, (col_xs[r] + SLOT_W // 2 - txt.get_width() // 2, TOP - 26))
+
+    # Bottom prompt
+    if tournament.is_complete():
+        prompt = "ENTER  Return to menu    ESC  Return to menu"
+    else:
+        prompt = "ENTER  Start next match    ESC  Quit tournament"
+    p_txt = font_small.render(prompt, True, (90, 90, 110))
+    surface.blit(p_txt, (SCREEN_W // 2 - p_txt.get_width() // 2, SCREEN_H - 34))

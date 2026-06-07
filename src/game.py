@@ -287,7 +287,40 @@ class Game:
         self.state = STATE_BRACKET
 
     def _handle_bracket_event(self, event):
-        pass  # implemented in Task 4
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                if self.tournament.is_complete():
+                    self.transition.start(self._end_tournament)
+                else:
+                    self._setup_tournament_match()
+                    def _go_mode():
+                        self.state = STATE_MODE_SELECT
+                        self.mode_selected = 0
+                    self.transition.start(_go_mode)
+            elif event.key == pygame.K_ESCAPE:
+                self.transition.start(self._end_tournament)
+
+    def _end_tournament(self):
+        self.tournament = None
+        self._reset_to_menu()
+
+    def _setup_tournament_match(self):
+        match = self.tournament.next_match()
+        slot_a = self.tournament.slots[match.slot_a]
+        slot_b = self.tournament.slots[match.slot_b]
+        # Normalize: CPU must be game player 2 (right paddle / CPUController)
+        if slot_a.is_cpu and not slot_b.is_cpu:
+            a_idx, b_idx = match.slot_b, match.slot_a
+            slot_a, slot_b = slot_b, slot_a
+        else:
+            a_idx, b_idx = match.slot_a, match.slot_b
+        self._tournament_match_slots = (a_idx, b_idx)
+        if slot_b.is_cpu:
+            self.opponent_type = OPPONENT_CPU
+            self.cpu_difficulty = slot_b.difficulty
+        else:
+            self.opponent_type = OPPONENT_HUMAN
+            self.cpu_difficulty = "MEDIUM"
 
     def _handle_mode_select_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -306,7 +339,9 @@ class Game:
                 self.transition.start(_start)
             elif event.key == pygame.K_ESCAPE:
                 self.menu_hover_t = 0.0
-                if self.opponent_type == OPPONENT_CPU:
+                if self.tournament is not None:
+                    self.transition.start(lambda: setattr(self, "state", STATE_BRACKET))
+                elif self.opponent_type == OPPONENT_CPU:
                     self.transition.start(lambda: setattr(self, "state", STATE_DIFFICULTY))
                 else:
                     self.transition.start(lambda: setattr(self, "state", STATE_MENU))
