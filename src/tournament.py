@@ -17,6 +17,7 @@ class Match:
 
 class TournamentManager:
     def __init__(self, slots: list[Slot]):
+        # Builds a single-elimination bracket (4 or 8 entrants) from the given slots
         assert len(slots) in (4, 8), f"Tournament requires 4 or 8 slots, got {len(slots)}"
         self.size: int = len(slots)
         self.slots: list[Slot] = slots
@@ -25,6 +26,7 @@ class TournamentManager:
         self.match_idx: int = 0
 
     def _build_rounds(self) -> list[list[Match]]:
+        # Pairs slots into round 1 matches, then creates empty placeholder matches for later rounds
         first = [Match(i * 2, i * 2 + 1) for i in range(self.size // 2)]
         rounds: list[list[Match]] = [first]
         n_more = {4: 1, 8: 2}[self.size]
@@ -34,11 +36,13 @@ class TournamentManager:
         return rounds
 
     def next_match(self) -> Match | None:
+        # Returns the match that should be played next, or None if the tournament is finished
         if self.is_complete():
             return None
         return self.rounds[self.round_idx][self.match_idx]
 
     def record_result(self, winner_slot_idx: int) -> None:
+        # Records the winner of the current match, slots them into the next round, and advances the pointer
         match = self.rounds[self.round_idx][self.match_idx]
         match.winner = winner_slot_idx
         # Propagate to next round
@@ -57,9 +61,11 @@ class TournamentManager:
             self.match_idx = 0
 
     def is_complete(self) -> bool:
+        # True once the final round's match has a recorded winner
         return all(m.winner is not None for m in self.rounds[-1])
 
     def champion(self) -> Slot | None:
+        # Returns the winning Slot once the tournament is complete, else None
         if not self.is_complete():
             return None
         return self.slots[self.rounds[-1][0].winner]

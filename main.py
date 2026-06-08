@@ -4,6 +4,7 @@ from src.game import Game
 
 
 def main():
+    # Boots pygame/audio, opens the window, and hands control to the Game loop
     pygame.init()
     pygame.mixer.init()
     screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))

@@ -23,6 +23,7 @@ _PARTICLE_SURFS: dict[int, pygame.Surface] = {}
 
 
 def _draw_menu_particles(surface: pygame.Surface, menu_particles: list, hover_t: float):
+    # Draws the ambient floating dots on menu screens with a gentle pulsing alpha
     for p in menu_particles:
         alpha = max(0, min(255, int(160 + 80 * math.sin(hover_t + p["phase"]))))
         r = p["radius"]
@@ -36,6 +37,7 @@ def _draw_menu_particles(surface: pygame.Surface, menu_particles: list, hover_t:
 
 
 def draw_glow(surface: pygame.Surface, color: tuple, center: tuple, radius: int):
+    # Draws a soft additive-blended circular glow (used for the ball and particles)
     for scale, alpha in [(1.8, 30), (1.4, 80), (1.0, 255)]:
         r = max(1, int(radius * scale))
         glow_surf = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
@@ -44,6 +46,7 @@ def draw_glow(surface: pygame.Surface, color: tuple, center: tuple, radius: int)
 
 
 def draw_glow_rect(surface: pygame.Surface, color: tuple, rect: pygame.Rect):
+    # Draws a soft additive-blended rectangular glow (used for paddles)
     for scale, alpha in [(1.4, 30), (1.2, 80), (1.0, 255)]:
         w = max(1, int(rect.width * scale))
         h = max(1, int(rect.height * scale))
@@ -54,6 +57,7 @@ def draw_glow_rect(surface: pygame.Surface, color: tuple, rect: pygame.Rect):
 
 
 def draw_background(surface: pygame.Surface):
+    # Fills the background and draws the dashed center court line
     surface.fill(BG_COLOR)
     dash_h, gap = 20, 12
     x = SCREEN_W // 2 - 1
@@ -68,6 +72,7 @@ def draw_hud(surface, p1, p2, font_large, font_small,
              p1_smash: float, p2_smash: float,
              p1_ready: bool, p2_ready: bool, smash_pulse_t: float,
              cpu_mode: bool = False):
+    # Draws the top HUD bar: scores, mode-specific info (clock/sets), per-player smash meters or power-up status, and control hints
     pygame.draw.rect(surface, (15, 15, 25), (0, 0, SCREEN_W, HUD_HEIGHT))
     pygame.draw.line(surface, (40, 40, 60), (0, HUD_HEIGHT), (SCREEN_W, HUD_HEIGHT), 1)
 
@@ -106,6 +111,7 @@ def draw_hud(surface, p1, p2, font_large, font_small,
 
 def _draw_smash_meter(surface, cx: int, meter: float, ready: bool, pulse_t: float,
                       color: tuple, shift_label: str, font_small):
+    # Draws one player's Final Smash meter bar, pulsing and labeled "READY!" once charged
     bar_w = 100
     bar_x = cx - bar_w // 2
     bar_y = HUD_HEIGHT - 14
@@ -125,6 +131,7 @@ def _draw_smash_meter(surface, cx: int, meter: float, ready: bool, pulse_t: floa
 
 
 def _draw_powerup_hud(surface, paddle, font_small, cx, color):
+    # Draws a countdown bar and label for a paddle's currently active power-up
     if not paddle.active_powerup:
         return
     label = POWERUP_LABELS.get(paddle.active_powerup, "?")
@@ -139,10 +146,12 @@ def _draw_powerup_hud(surface, paddle, font_small, cx, color):
 
 
 def draw_paddle(surface: pygame.Surface, paddle):
+    # Draws a paddle as a glowing rectangle in its player color
     draw_glow_rect(surface, paddle.color, paddle.rect)
 
 
 def draw_ball(surface: pygame.Surface, ball):
+    # Draws the ball's fading motion trail (colored by speed) plus a glowing core
     for i, pos in enumerate(ball.trail_positions):
         frac = i / len(ball.trail_positions)
         alpha = int(180 * frac)
@@ -160,12 +169,14 @@ def draw_ball(surface: pygame.Surface, ball):
 
 
 def draw_particles(surface: pygame.Surface, particles: list):
+    # Draws each still-alive particle as a glowing dot
     for p in particles:
         if p.alpha > 0:
             draw_glow(surface, p.color, (int(p.pos.x), int(p.pos.y)), p.radius)
 
 
 def draw_countdown(surface: pygame.Surface, count: int, font_huge):
+    # Draws the big "3-2-1" pre-rally countdown number centered on screen
     if count > 0:
         text = font_huge.render(str(count), True, WHITE)
         x = SCREEN_W // 2 - text.get_width() // 2
@@ -175,6 +186,7 @@ def draw_countdown(surface: pygame.Surface, count: int, font_huge):
 
 def draw_menu(surface, font_title, font_large, font_small, selected: int,
               anim_ball_pos: tuple, menu_particles: list | None = None, hover_t: float = 0.0):
+    # Draws the main menu: title, animated demo ball, ambient particles, and the four navigable options with hover animation
     draw_background(surface)
     if menu_particles is not None:
         _draw_menu_particles(surface, menu_particles, hover_t)
@@ -206,6 +218,7 @@ def draw_menu(surface, font_title, font_large, font_small, selected: int,
 def draw_mode_select(surface, font_large, font_small, selected: int,
                      context_label: str | None = None, menu_particles: list | None = None,
                      hover_t: float = 0.0):
+    # Draws the game-mode select screen: three modes with descriptions, highlighting the selected one, plus an optional context label (e.g. CPU difficulty / tournament matchup)
     draw_background(surface)
     if menu_particles is not None:
         _draw_menu_particles(surface, menu_particles, hover_t)
@@ -245,6 +258,7 @@ def draw_mode_select(surface, font_large, font_small, selected: int,
 
 def draw_difficulty_select(surface, font_large, font_small, selected: int,
                            menu_particles: list | None = None, hover_t: float = 0.0):
+    # Draws the CPU difficulty select screen, color-coding each option (green→red for easy→insane)
     draw_background(surface)
     if menu_particles is not None:
         _draw_menu_particles(surface, menu_particles, hover_t)
@@ -277,6 +291,7 @@ def draw_difficulty_select(surface, font_large, font_small, selected: int,
 
 
 def draw_pause(surface, font_large, selected: int):
+    # Draws a translucent pause overlay with Resume / Quit to Menu options
     overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 160))
     surface.blit(overlay, (0, 0))
@@ -289,6 +304,7 @@ def draw_pause(surface, font_large, selected: int):
 
 
 def draw_game_over(surface, winner: int, p1, p2, font_title, font_large, selected: int, pulse_t: float, cpu_mode: bool = False):
+    # Draws the match-result screen: winner banner, final score, and Rematch / Menu options
     draw_background(surface)
     color = P1_COLOR if winner == 1 else P2_COLOR
     if cpu_mode and winner == 2:
@@ -308,6 +324,7 @@ def draw_game_over(surface, winner: int, p1, p2, font_title, font_large, selecte
 def draw_tournament_setup(surface, font_large, font_small, size: int,
                           slot_type_indices: list, selected_row: int,
                           menu_particles: list | None, hover_t: float):
+    # Draws the tournament setup screen: bracket size toggle (4/8) and per-slot type pickers (human or CPU+difficulty)
     draw_background(surface)
     if menu_particles is not None:
         _draw_menu_particles(surface, menu_particles, hover_t)
@@ -362,12 +379,14 @@ def draw_tournament_setup(surface, font_large, font_small, size: int,
 
 
 def _slot_color(slot) -> tuple:
+    # Picks a display color for a bracket slot: P1 blue for humans, difficulty color for CPUs
     if not slot.is_cpu:
         return P1_COLOR
     return DIFFICULTY_COLORS[slot.difficulty]
 
 
 def _is_eliminated(tournament, slot_idx: int) -> bool:
+    # True if this slot has lost a recorded match anywhere in the bracket
     for round_matches in tournament.rounds:
         for m in round_matches:
             if m.winner is not None:
@@ -378,6 +397,7 @@ def _is_eliminated(tournament, slot_idx: int) -> bool:
 
 def _draw_bracket_box(surface, label: str, x: int, cy: int, w: int, h: int,
                       font, color: tuple, highlight: bool):
+    # Draws one labeled box in the bracket diagram (slot, winner, "NEXT", "?", or champion)
     rect = pygame.Rect(x, cy - h // 2, w, h)
     border_color = ACCENT_COLOR if highlight else color
     pygame.draw.rect(surface, (12, 12, 20), rect, border_radius=3)
@@ -388,6 +408,7 @@ def _draw_bracket_box(surface, label: str, x: int, cy: int, w: int, h: int,
 
 
 def draw_bracket(surface, tournament, font_large, font_small):
+    # Draws the full tournament bracket: initial slots, connector lines, winners/placeholders for each round, round labels, and the bottom prompt
     draw_background(surface)
 
     n_slots = tournament.size

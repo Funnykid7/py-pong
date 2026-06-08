@@ -5,6 +5,7 @@ from src.entities import Ball, Paddle
 
 class CPUController:
     def __init__(self, difficulty: str):
+        # Loads speed/reaction/dead-zone tuning for the chosen difficulty preset
         params = CPU_PARAMS[difficulty]
         self.max_speed: float = params["max_speed"]
         self.reaction_delay: float = params["reaction_delay"]
@@ -15,6 +16,7 @@ class CPUController:
         self._insane_strategic: bool = difficulty == "INSANE"
 
     def update(self, dt: float, ball: Ball, paddle: Paddle) -> None:
+        # Tracks the ball with a reaction-delay/dead-zone, and recenters when ball moves away
         center_y = (SCREEN_H + HUD_HEIGHT) / 2.0
         if ball.vel.x > 0:
             self._reaction_timer -= dt
@@ -34,6 +36,7 @@ class CPUController:
             paddle.vel.y = self.max_speed
 
     def should_smash(self, ball: Ball, player_paddle: Paddle, meter_ready: bool) -> bool:
+        # Decides whether the CPU fires its Smash power-up this frame (HARD = instantly, INSANE = strategically)
         if not self.smash_enabled or not meter_ready:
             return False
         if not self._insane_strategic:

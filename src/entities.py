@@ -12,6 +12,7 @@ from src.constants import (
 
 class Paddle:
     def __init__(self, x: float, player: int):
+        # Creates a paddle for player 1 or 2 at horizontal position `x`, centered vertically
         self.player = player
         self.color = P1_COLOR if player == 1 else P2_COLOR
         self.pos = pygame.Vector2(x, SCREEN_H / 2)
@@ -25,6 +26,7 @@ class Paddle:
         self.powerup_timer = 0.0
 
     def update(self, dt: float):
+        # Moves the paddle, clamps it within the playfield, and ticks down any active power-up
         self.pos.y += self.vel.y * dt
         half_h = self.height / 2
         self.pos.y = max(HUD_HEIGHT + half_h, min(SCREEN_H - half_h, self.pos.y))
@@ -36,6 +38,7 @@ class Paddle:
                 self.deactivate_powerup()
 
     def activate_powerup(self, powerup_type: str):
+        # Applies a power-up effect to this paddle (resizing it for BIG_PADDLE/SMALL_OPPONENT) and starts its timer
         self.active_powerup = powerup_type
         self.powerup_timer = POWERUP_DURATION
         if powerup_type == "BIG_PADDLE":
@@ -44,6 +47,7 @@ class Paddle:
             self.height = int(PADDLE_H * 0.6)
 
     def deactivate_powerup(self):
+        # Reverts paddle size/state once a power-up's duration ends
         if self.active_powerup in ("BIG_PADDLE", "SMALL_OPPONENT"):
             self.height = PADDLE_H
         self.active_powerup = None
@@ -52,6 +56,7 @@ class Paddle:
 
 class Ball:
     def __init__(self):
+        # Spawns the ball at center screen with a random initial launch angle/direction
         self.pos = pygame.Vector2(SCREEN_W / 2, SCREEN_H / 2)
         self.base_speed = float(BALL_SPEED_INITIAL)
         angle = random.choice([-30, -15, 0, 15, 30])
@@ -69,6 +74,7 @@ class Ball:
         self.last_touch: int = 0
 
     def update(self, dt: float):
+        # Records trail history, applies spin to vertical velocity, and advances position
         self.trail_positions.append(pygame.Vector2(self.pos))
         if len(self.trail_positions) > BALL_TRAIL_LENGTH:
             self.trail_positions.pop(0)
@@ -77,9 +83,11 @@ class Ball:
         self.rect.center = (int(self.pos.x), int(self.pos.y))
 
     def bounce_wall(self):
+        # Reflects vertical velocity off the top/bottom walls
         self.vel.y *= -1
 
     def bounce_paddle(self, paddle: "Paddle"):
+        # Reflects the ball off a paddle: bounce angle depends on hit position, speed ramps up with rally length, and adds spin
         relative_y = (self.pos.y - paddle.pos.y) / (paddle.height / 2)
         relative_y = max(-1.0, min(1.0, relative_y))
         bounce_angle = relative_y * 75
@@ -97,6 +105,7 @@ class Ball:
         self.last_touch = paddle.player
 
     def reset(self):
+        # Re-centers the ball and relaunches it with a fresh random angle/direction (after a point is scored)
         self.pos = pygame.Vector2(SCREEN_W / 2, SCREEN_H / 2)
         self.trail_positions.clear()
         self.rally_hits = 0
@@ -112,6 +121,7 @@ class Ball:
 
     @property
     def current_speed(self) -> float:
+        # Current speed magnitude, used by the renderer to color the ball trail
         return self.vel.length()
 
 
@@ -126,6 +136,7 @@ class PowerUpType:
 
 class PowerUp:
     def __init__(self):
+        # Spawns a power-up pickup at a random position with a random type
         margin = 100
         self.pos = pygame.Vector2(
             random.randint(SCREEN_W // 4, 3 * SCREEN_W // 4),
@@ -138,9 +149,11 @@ class PowerUp:
         self.collected = False
 
     def update(self, dt: float):
+        # Advances the pulsing-glow animation timer
         self.pulse_t += dt
 
     def check_collection(self, ball: "Ball") -> bool:
+        # Marks the power-up collected and returns True if the ball touched it this frame
         if self.rect.colliderect(ball.rect):
             self.collected = True
             return True

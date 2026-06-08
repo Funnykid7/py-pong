@@ -47,3 +47,4 @@ htmlcov/
 Thumbs.db
 .env
 .env.local
+Py-pong debreif.md

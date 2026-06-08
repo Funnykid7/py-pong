@@ -25,6 +25,7 @@ import src.renderer as renderer
 
 class Game:
     def __init__(self, screen: pygame.Surface):
+        # Sets up the entire game: state machine, fonts, paddles/ball, FX systems, audio, and tournament/menu defaults
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.state = STATE_MENU
@@ -86,6 +87,7 @@ class Game:
         self._start_menu_music()
 
     def _init_audio(self):
+        # Loads sound effects, menu music, and the looping background theme (failures are silently ignored)
         self.sfx: dict = {}
         for name, path in [
             ("hit",     "assets/sounds/ball hit.mp3"),
@@ -115,20 +117,24 @@ class Game:
             pass
 
     def _start_menu_music(self):
+        # (Re)starts the looping menu theme if it loaded successfully
         if self._menu_music_loaded:
             pygame.mixer.music.stop()
             pygame.mixer.music.play(-1)
 
     def _stop_menu_music(self):
+        # Fades out the menu theme when entering a match
         if self._menu_music_loaded:
             pygame.mixer.music.fadeout(500)  # async fade; countdown covers the 0.5s overlap
 
     def _play_sfx(self, name: str):
+        # Plays a loaded sound effect by name if available
         sfx = self.sfx.get(name)
         if sfx:
             sfx.play()
 
     def _update_smash_meters(self, dt: float):
+        # Charges each player's Final Smash meter faster the further behind they are; flags it ready at full
         p1_gap = max(0, self.p2.score - self.p1.score)
         self.p1_smash_meter = min(1.0, self.p1_smash_meter + (SMASH_BASE_CHARGE_RATE + p1_gap * SMASH_PER_POINT_CHARGE) * dt)
         if self.p1_smash_meter >= 1.0:
@@ -141,6 +147,7 @@ class Game:
                 self.p2_smash_ready = True
 
     def _activate_smash(self, player: int):
+        # Fires a player's Final Smash: grows their paddle and shrinks the opponent's, then resets their meter
         if player == 1 and not self.p1_smash_ready:
             return
         if player == 2 and not self.p2_smash_ready:
@@ -158,6 +165,7 @@ class Game:
             self.p2_smash_ready = False
 
     def run(self):
+        # Main loop: pumps events, updates game state, draws the frame, repeats until quit
         running = True
         while running:
             dt = self.clock.tick(FPS) / 1000.0
@@ -175,6 +183,7 @@ class Game:
             pygame.display.flip()
 
     def _handle_event(self, event):
+        # Routes the pygame event to the handler for the current state (suppressed during screen transitions on menu-like states)
         if self.transition.blocking and self.state in (
             STATE_MENU, STATE_DIFFICULTY, STATE_MODE_SELECT, STATE_GAME_OVER,
             STATE_TOURNAMENT_SETUP, STATE_BRACKET,
@@ -198,6 +207,7 @@ class Game:
             return self._handle_gameover_event(event)
 
     def _handle_menu_event(self, event):
+        # Main menu navigation: 1v1 / 1vCPU / Tournament / Quit selections trigger transitions to the next state
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_UP, pygame.K_w):
                 self.menu_selected = (self.menu_selected - 1) % 4
@@ -227,6 +237,7 @@ class Game:
                     self.transition.start(lambda: setattr(self, "_quit_pending", True))
 
     def _handle_difficulty_event(self, event):
+        # CPU difficulty picker: choose EASY/MEDIUM/HARD/INSANE, then proceed to mode select or back to menu
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_UP, pygame.K_w):
                 self.difficulty_selected = (self.difficulty_selected - 1) % 4
@@ -245,6 +256,7 @@ class Game:
                 self.transition.start(lambda: setattr(self, "state", STATE_MENU))
 
     def _handle_tournament_setup_event(self, event):
+        # Tournament bracket setup screen: pick 4 or 8 players and assign each slot's type (human/CPU+difficulty)
         if event.type == pygame.KEYDOWN:
             n = self._ts_size
             if event.key in (pygame.K_UP, pygame.K_w):
@@ -272,6 +284,7 @@ class Game:
                 self.transition.start(lambda: setattr(self, "state", STATE_MENU))
 
     def _start_tournament(self):
+        # Builds Slot objects from the chosen slot types, creates the TournamentManager, and jumps to the bracket screen
         from src.tournament import TournamentManager, Slot
         human_count = 0
         slots: list[Slot] = []
@@ -287,6 +300,7 @@ class Game:
         self.state = STATE_BRACKET
 
     def _handle_bracket_event(self, event):
+        # Bracket screen: ENTER starts the next match (or ends the tournament if complete); ESC quits the tournament
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
                 if self.tournament.is_complete():
@@ -301,10 +315,12 @@ class Game:
                 self.transition.start(self._end_tournament)
 
     def _end_tournament(self):
+        # Discards the tournament and returns to the main menu
         self.tournament = None
         self._reset_to_menu()
 
     def _setup_tournament_match(self):
+        # Configures opponent_type/cpu_difficulty for the upcoming bracket match, normalizing so any CPU plays as player 2
         match = self.tournament.next_match()
         slot_a = self.tournament.slots[match.slot_a]
         slot_b = self.tournament.slots[match.slot_b]
@@ -323,6 +339,7 @@ class Game:
             self.cpu_difficulty = "MEDIUM"
 
     def _handle_mode_select_event(self, event):
+        # Game-mode picker (First to 11 / Best of 3 / Timed): ENTER starts the match, ESC backs out to the right prior screen
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 self.mode_selected = (self.mode_selected - 1) % 3
@@ -347,6 +364,7 @@ class Game:
                     self.transition.start(lambda: setattr(self, "state", STATE_MENU))
 
     def _handle_playing_event(self, event):
+        # In-match input: ESC pauses, LSHIFT/RSHIFT trigger each player's Final Smash (when not mid-countdown)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.state = STATE_PAUSED
@@ -357,6 +375,7 @@ class Game:
                 self._activate_smash(2)
 
     def _handle_paused_event(self, event):
+        # Pause menu: ESC/Resume continues the match, Quit to Menu returns to the main menu
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.state = STATE_PLAYING
@@ -371,6 +390,7 @@ class Game:
                     self.transition.start(self._reset_to_menu)
 
     def _handle_gameover_event(self, event):
+        # Game-over screen: Rematch restarts the same match setup, Menu returns to the main menu
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 self.gameover_selected = (self.gameover_selected - 1) % 2
@@ -383,6 +403,7 @@ class Game:
                     self.transition.start(self._reset_to_menu)
 
     def _start_match(self):
+        # Resets scores/paddles/ball/FX/meters, swaps menu music for the match theme, sets up a CPU if needed, and begins the countdown
         self._stop_menu_music()
         if self._bg_theme:
             self._bg_channel.play(self._bg_theme, loops=-1)
@@ -411,10 +432,12 @@ class Game:
         self._start_countdown()
 
     def _start_countdown(self):
+        # Begins a 3-2-1 countdown (1 second per number) before play resumes
         self.countdown = 3
         self.countdown_timer = 1.0
 
     def _reset_to_menu(self):
+        # Returns to the main menu, stopping match audio and restarting menu music
         self.state = STATE_MENU
         self.menu_selected = 0
         self.menu_hover_t = 0.0
@@ -423,6 +446,7 @@ class Game:
         self._start_menu_music()
 
     def _update(self, dt: float):
+        # Per-frame update dispatcher: advances shared timers/transitions, then delegates to the current state's update routine
         self.menu_hover_t = (self.menu_hover_t + dt) % (2 * math.pi)
         self.transition.update(dt)
         if self.state == STATE_MENU:
@@ -438,6 +462,7 @@ class Game:
             self.particles.update(dt)
 
     def _update_menu(self, dt: float):
+        # Animates the bouncing demo ball on the main menu and updates background particles
         self.menu_ball_pos += self.menu_ball_vel * dt
         if self.menu_ball_pos.x < 0 or self.menu_ball_pos.x > SCREEN_W:
             self.menu_ball_vel.x *= -1
@@ -446,6 +471,7 @@ class Game:
         self._update_menu_particles(dt)
 
     def _make_menu_particles(self) -> list[dict]:
+        # Generates the floating ambient background particles shown on all menu-style screens
         particles = []
         for _ in range(60):
             angle = random.uniform(0, 2 * math.pi)
@@ -463,6 +489,7 @@ class Game:
         return particles
 
     def _update_menu_particles(self, dt: float):
+        # Drifts ambient menu particles and wraps them around screen edges
         for p in self.menu_particles:
             p["pos"] += p["vel"] * dt
             if p["pos"].x < 0:
@@ -475,6 +502,7 @@ class Game:
                 p["pos"].y = 0
 
     def _update_playing(self, dt: float):
+        # Core gameplay tick: handles the pre-point countdown, paddle/ball/CPU movement, collisions, FX, smash meters, and timed-mode countdown
         if self.countdown > 0:
             self.countdown_timer -= dt
             if self.countdown_timer <= 0:
@@ -513,6 +541,7 @@ class Game:
 
 
     def _handle_collisions(self):
+        # Resolves wall bounces and paddle hits for every ball, and queues up any balls that went past an edge to be scored
         scored: list[tuple[int, Ball]] = []
         for ball in list(self.balls):
             # Wall bounce
@@ -547,6 +576,7 @@ class Game:
                 self._score(scorer, ball)
 
     def _score(self, scorer: int, scored_ball: Ball):
+        # Awards a point, plays FX/SFX, removes/resets the scoring ball, and checks for match/set-ending conditions
         if self.state != STATE_PLAYING:
             return
         self._play_sfx("point")
@@ -577,6 +607,7 @@ class Game:
             self._check_set_win()
 
     def _check_set_win(self):
+        # Best-of-3 mode: when a player reaches the set win score, awards them a set, resets scores/meters, and ends the match if they've won enough sets
         for player, paddle in [(1, self.p1), (2, self.p2)]:
             if paddle.score >= SET_WIN_SCORE:
                 paddle.sets_won += 1
@@ -593,6 +624,7 @@ class Game:
                 return
 
     def _end_match(self, winner: int | None = None):
+        # Wraps up the match: in tournament mode records the result and returns to the bracket; otherwise plays victory/loss SFX and shows the game-over screen
         if winner is None:
             if self.p1.score > self.p2.score:
                 winner = 1
@@ -621,6 +653,7 @@ class Game:
         self.state = STATE_GAME_OVER
 
     def _draw(self):
+        # Renders the current frame to an off-screen surface (dispatching by state to the renderer module), applies screen-shake offset, and flips it onto the window
         if self.state == STATE_PLAYING:
             offset = self.shake.get_offset()
         else:
